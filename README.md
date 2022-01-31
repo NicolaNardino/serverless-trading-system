@@ -41,3 +41,11 @@ And gets out so:
     "settlementDate": "2022-01-31T17:41:39.192Z"
 }
 ```
+
+## Notes
+By using Node.js ES6 modules, it's possible to let the Lamba wait for initialization, i.e., before the handler gets invoked:
+
+```javascript
+const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpools']}))).Parameters.map(p => [p.Name, p.Value]));
+```
+See [here](https://aws.amazon.com/blogs/compute/using-node-js-es-modules-and-top-level-await-in-aws-lambda/).
