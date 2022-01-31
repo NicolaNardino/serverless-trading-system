@@ -36,7 +36,7 @@ export async function handler(event) {
                 "StringValue": "True"
             }}),  publishToSns(snsClient, orderDispatcherTopicArn, tradesAndNotMatchedWithinDarkPool.filter(t => t.notMatchedInDarkPool === "True") , {"PoolType": {
                 "DataType": "String",
-                "StringValue": "Li"
+                "StringValue": "Lit"
             }})]);
             
     return {
