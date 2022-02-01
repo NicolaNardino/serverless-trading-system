@@ -1,13 +1,26 @@
-# Welcome to Aserveless-trading-system
+# Welcome to serveless-trading-system
 
 It covers the front-to-back high-level architecture of a trading system, from the time an order gets entered from a Broker UI to the trade settlement, passing through simulated Dark and Lit Pools matching engines. The focus is on the overall infrastructure rather than on the actual matchin engines.
 
-It's all AWS serveless (Lambda, API GW, SNS, DynamoDB and DynamoDB Streams, S3, Parameter Store and etc...), with Node.js Javascript ES6 modules.
 
-![serverless-trading-system](https://user-images.githubusercontent.com/8766989/151840529-edcfc0ec-da1c-4abb-8415-ab588a371bdd.jpg)
+Main technologies used:
+- Node.js, Javascript ES6.
+- Lambda & Lambda Layers.
+- API Gateway.
+- SNS.
+- DynamoDB & DynamoDB Streams.
+- S3.
+- Parameter Store.
+
+
+## Architecture Diagram
+
+![serverless-trading-system](https://user-images.githubusercontent.com/8766989/152015724-f9530418-a5fc-40bd-ae73-7c5c452ab4fb.jpg)
+
 
 ## Order flow
-Orders enter into the system with the following structure:
+
+an order get placed into the trading system through a POST endpoint, with the following structure:
 
 ```json
 {
@@ -19,6 +32,7 @@ Orders enter into the system with the following structure:
       "price": "161.90"
  }
 ```
+
 And gets out so:
 
 ```json
@@ -41,6 +55,11 @@ And gets out so:
     "settlementDate": "2022-01-31T17:41:39.192Z"
 }
 ```
+
+According to the following order flow:
+
+![OrderFlow](https://user-images.githubusercontent.com/8766989/152015767-85af6dfb-f2b6-407d-a5de-6d4d9bfb1dce.jpg)
+
 
 ## Notes
 By using Node.js ES6 modules, it's possible to let the Lamba wait for initialization, i.e., before the handler gets invoked:
