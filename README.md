@@ -15,12 +15,12 @@ Main technologies used:
 
 ## Architecture Diagram
 
-![serverless-trading-system](https://user-images.githubusercontent.com/8766989/152015724-f9530418-a5fc-40bd-ae73-7c5c452ab4fb.jpg)
+![serverless-trading-system](https://user-images.githubusercontent.com/8766989/152017583-dd130d2f-dd51-41aa-ad41-5a2b672fa5f0.jpg)
 
 
 ## Order flow
 
-an order get placed into the trading system through a POST endpoint, with the following structure:
+Orders get into the trading system through a POST endpoint, with the following structure:
 
 ```json
 {
@@ -33,7 +33,7 @@ an order get placed into the trading system through a POST endpoint, with the fo
  }
 ```
 
-And gets out so:
+And get out so:
 
 ```json
 {
@@ -62,9 +62,17 @@ According to the following order flow:
 
 
 ## Notes
-By using Node.js ES6 modules, it's possible to let the Lamba wait for initialization, i.e., before the handler gets invoked:
+
+By using Node.js ES6 modules, it's possible to let the Lamba wait for its initialization to complete, i.e., before the handler gets invoked:
 
 ```javascript
 const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpools']}))).Parameters.map(p => [p.Name, p.Value]));
+...
+export async function handler(event) {...}
 ```
 See [here](https://aws.amazon.com/blogs/compute/using-node-js-es-modules-and-top-level-await-in-aws-lambda/).
+
+
+## TODO
+
+Infra set by via SAM or CDK.
