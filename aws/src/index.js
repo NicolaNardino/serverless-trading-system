@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk');
 AWS.config.update({ region: 'us-east-2' });
 const apiClient = require('aws-api-gateway-client').default;
-const {InvokeUrl, ApiKey } = require('../sandbox/constants.js')
+const {SmartOrderRouterInvokeUrl, DataExtractorInvokeUrl, ApiKey } = require('../sandbox/constants.js') //this is excluded from the git repo.
 
 const prepareRandomOrders = (nrOrders) => {
   const customers = ['000001', '000002', '000003', '000005', '000005', '000006', '000007', '000008', '000009', '0000010'];
@@ -37,12 +37,21 @@ async function invokeApi(apiGatewayConfig, body) {
 async function testApiClient() {
     console.log(await invokeApi(
     {
-      invokeUrl: InvokeUrl,
+      invokeUrl: DataExtractorInvokeUrl,
       apiKey: ApiKey,
       region: 'us-east-2',
       path: '/trades/000007?tradeDate=2022-01-22', //'/customers/000007'
       httpMethod: 'GET'
     }));
+
+    console.log(await invokeApi(
+      {
+        invokeUrl: SmartOrderRouterInvokeUrl,
+        apiKey: ApiKey,
+        region: 'us-east-2',
+        path: '/orders', 
+        httpMethod: 'POST'
+      }, prepareRandomOrders(5)));
 }
 
 const getRandomInteger = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
