@@ -58,6 +58,7 @@ According to the following order flow:
 
 ## Notes
 
+### Node.js ES6 modules
 By using Node.js ES6 modules, it's possible to let the Lamba wait for its initialization to complete, i.e., before the handler gets invoked:
 
 ```javascript
@@ -66,6 +67,13 @@ const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Name
 export async function handler(event) {...}
 ```
 See [here](https://aws.amazon.com/blogs/compute/using-node-js-es-modules-and-top-level-await-in-aws-lambda/).
+
+### Lambda Proxy Integration
+The 2 API Gateways, SmartOrderRouter-API & DataExtractor-API, use the Lamba Proxy Integration, i.e., /{proxy+}. 
+
+### Dark & Lit Pools
+While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by the broader audience, in fact, they're the commonly known Stock Exchanges, the same can't be said about [Dark Pools](https://en.wikipedia.org/wiki/Dark_pool).
+
 
 
 ## TODO
