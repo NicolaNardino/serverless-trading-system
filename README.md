@@ -5,12 +5,7 @@ It covers the front-to-back high-level architecture of a trading system, from th
 
 Main technologies used:
 - Node.js, Javascript ES6.
-- Lambda & Lambda Layers.
-- API Gateway.
-- SNS.
-- DynamoDB & DynamoDB Streams.
-- S3.
-- Parameter Store.
+- AWS: Lambda & Lambda Layers, API Gateway, SNS., DynamoDB & DynamoDB Streams, S3, Parameter Store.
 
 
 ## Architecture Diagram
