@@ -43,7 +43,7 @@ And get out so:
     "initialQuantity": 8614,
     "split": "Yes",
     "tradeId": "e518d027-3cea-45f0-b661-e56b71b0dfa5",
-    "exchange": " 'EDGA'",
+    "exchange": "EDGA",
     "exchangeType": "LitPool",
     "tradeDate": "2022-01-31T17:41:35.619Z",
     "fee": "0.58",
