@@ -79,4 +79,4 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 
 ## TODO
 
-Infra set by via SAM or CDK.
+Infra set-up by via SAM or CDK.
