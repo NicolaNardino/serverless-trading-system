@@ -9,7 +9,7 @@ Main technologies used:
 
 The gist of it is that all goes around a message bus: a pure pub/ sub serveless software architecture. 
 
-## Architecture Diagram
+## Software Architecture Diagram
 
 ![serverless-trading-system](https://user-images.githubusercontent.com/8766989/152017583-dd130d2f-dd51-41aa-ad41-5a2b672fa5f0.jpg)
 
