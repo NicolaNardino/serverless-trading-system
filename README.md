@@ -5,10 +5,11 @@ It covers the front-to-back high-level architecture of a trading system, from th
 
 Main technologies used:
 - Node.js, Javascript ES6.
-- AWS: Lambda & Lambda Layers, API Gateway, SNS., DynamoDB & DynamoDB Streams, S3, Parameter Store.
+- AWS: Lambda & Lambda Layers, API Gateway, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store.
 
+The gist of it is that all goes around a message bus: a pure pub/ sub serveless software architecture. 
 
-## Architecture Diagram
+## Software Architecture
 
 ![serverless-trading-system](https://user-images.githubusercontent.com/8766989/152017583-dd130d2f-dd51-41aa-ad41-5a2b672fa5f0.jpg)
 
@@ -78,4 +79,4 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 
 ## TODO
 
-Infra set by via SAM or CDK.
+Infra set-up by via SAM or CDK.
