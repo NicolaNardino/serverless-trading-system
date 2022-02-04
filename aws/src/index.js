@@ -4,7 +4,7 @@ const apiClient = require('aws-api-gateway-client').default;
 const {SmartOrderRouterInvokeUrl, DataExtractorInvokeUrl, ApiKey } = require('../sandbox/constants.js') //this is excluded from the git repo.
 
 const prepareRandomOrders = (nrOrders) => {
-  const customers = ['000001', '000002', '000003', '000005', '000005', '000006', '000007', '000008', '000009', '0000010'];
+  const customers = ['000001', '000002', '000003', '000004', '000005', '000006','000007','000008','000009','0000010', '0000011', '0000012'];
   const tickers = ['FB', 'AMD', 'AMZN', 'APPL', 'GOOG', 'NFLX', 'F', 'T', 'MO', 'PFE', 'COIN', 'MRNA', 'ORCL', 'TSLA', 'NVDA', 'MSFT', 'UBSN', 'CSGN'];
   const directions = ['Buy', 'Sell'];
   const types = ['Market', 'Limit']
@@ -35,14 +35,14 @@ async function invokeApi(apiGatewayConfig, body) {
 }
 
 async function testApiClient() {
-    console.log(await invokeApi(
+    /*console.log(await invokeApi(
     {
       invokeUrl: DataExtractorInvokeUrl,
       apiKey: ApiKey,
       region: 'us-east-2',
       path: '/trades/000007?tradeDate=2022-01-22', //'/customers/000007'
       httpMethod: 'GET'
-    }));
+    }));*/
 
     console.log(await invokeApi(
       {
@@ -51,7 +51,7 @@ async function testApiClient() {
         region: 'us-east-2',
         path: '/orders', 
         httpMethod: 'POST'
-      }, prepareRandomOrders(5)));
+      }, prepareRandomOrders(16)));
 }
 
 const getRandomInteger = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;

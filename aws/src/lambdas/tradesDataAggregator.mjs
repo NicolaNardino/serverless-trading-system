@@ -43,15 +43,19 @@ export async function handler(event) {
                     ExpressionAttributeNames: {
                         '#NrTrades': 'NrTrades',
                         '#TotalCommissionPaid': 'TotalCommissionPaid',
+                        '#TotalAmountInvested': 'TotalAmountInvested',
+                        '#RemainingFunds': 'RemainingFunds',
                         '#Updated': 'Updated'
                     },
                     ExpressionAttributeValues: {
                         ':Count': 1,
                         ':Fee': parseFloat(record.dynamodb.NewImage.Fee.S),
+                        ':AmountInvested': parseFloat(record.dynamodb.NewImage.Price.S) * parseFloat(record.dynamodb.NewImage.Quantity.N), 
                         ':Start': 0,
                         ':Now': Date.now()
                     },
-                    UpdateExpression: 'SET #NrTrades = if_not_exists(#NrTrades, :Start) + :Count, #TotalCommissionPaid = if_not_exists(#TotalCommissionPaid, :Start) + :Fee, #Updated = :Now'
+                    UpdateExpression: 'SET #NrTrades = if_not_exists(#NrTrades, :Start) + :Count, #TotalCommissionPaid = if_not_exists(#TotalCommissionPaid, :Start) + :Fee, '+
+                    '#TotalAmountInvested = if_not_exists(#TotalAmountInvested, :Start) + :AmountInvested, #RemainingFunds = #RemainingFunds - :AmountInvested, #Updated = :Now'
                 };
                 await ddbDocClient.send(new UpdateCommand(customerUpdateExpr));
                 //console.log('Updated key: '+JSON.stringify(customerUpdateExpr.Key));
