@@ -11,7 +11,7 @@ The gist of it is that all goes around a message bus: a pure pub/ sub serveless 
 
 ## Software Architecture
 
-![serverless-trading-system (2)](https://user-images.githubusercontent.com/8766989/152655480-806ef255-7657-4b89-a960-0a497754ad53.jpg)
+![main-arch](https://user-images.githubusercontent.com/8766989/152656255-14ce7c58-77d2-41ef-88c8-ba5a312c7036.jpg)
 
 
 ## Order flow
@@ -71,6 +71,11 @@ See [here](https://aws.amazon.com/blogs/compute/using-node-js-es-modules-and-top
 
 ### Lambda Proxy Integration
 The 2 API Gateways, SmartOrderRouter-API & DataExtractor-API, use the Lamba Proxy Integration, i.e., /{proxy+}. 
+
+![data-access-layer](https://user-images.githubusercontent.com/8766989/152656258-b3a5b64c-20f5-485b-8bf5-2d741e7635fa.jpg)
+
+### Lambda Layer
+![lambda-layers](https://user-images.githubusercontent.com/8766989/152656253-62478427-945a-48e4-b36b-ce0f648f50e0.jpg)
 
 ### Dark & Lit Pools
 While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by the broader audience, in fact, they're the commonly known Stock Exchanges, the same can't be said about [Dark Pools](https://en.wikipedia.org/wiki/Dark_pool).
