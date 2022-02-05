@@ -11,7 +11,7 @@ The gist of it is that all goes around a message bus: a pure pub/ sub serveless 
 
 ## Software Architecture
 
-![serverless-trading-system](https://user-images.githubusercontent.com/8766989/152017583-dd130d2f-dd51-41aa-ad41-5a2b672fa5f0.jpg)
+![serverless-trading-system (1)](https://user-images.githubusercontent.com/8766989/152655283-f139bcbf-fc1e-4155-a1e8-1d589ba2c935.jpg)
 
 
 ## Order flow
