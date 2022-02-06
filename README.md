@@ -57,6 +57,18 @@ According to the following order flow:
 
 ![OrderFlow (1)](https://user-images.githubusercontent.com/8766989/152655833-91fd0277-7e5e-450b-85e0-9cd456b1deed.jpg)
 
+## DynamoDB Data Layer
+
+There are 3 entity tpyes:
+- Customers, CUST#cust-id: their initial data get entered at system initialization time, then enriched with stats during the data aggregation step.
+      ![customer-init](https://user-images.githubusercontent.com/8766989/152694585-c5ab7037-0954-4a8a-af28-4fdd046368d5.png)
+      ![customer-update](https://user-images.githubusercontent.com/8766989/152694587-a1a6fcf4-198e-4418-80cf-3435073fff80.png)
+     
+- Trades, TRADE#trade-date#trade-id: they are in a 1:n relationship with Customers.
+      ![trade](https://user-images.githubusercontent.com/8766989/152694589-f1440cde-2383-49b2-b55a-26c0a0022479.png)
+      
+- Tickers, TICKER#ticker-id: they are an outcome of the trade aggregation step, where trade data get aggregated at ticker leve.
+      ![ticker](https://user-images.githubusercontent.com/8766989/152694588-a1a7e492-5139-4dc6-9e4e-9422eaad8e47.png)
 
 ## Notes
 
