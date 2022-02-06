@@ -62,6 +62,7 @@ According to the following order flow:
 There are 3 entity tpyes:
 - Customers, CUST#cust-id: their initial data get entered at system initialization time, then enriched with stats during the data aggregation step.
       ![customer-init](https://user-images.githubusercontent.com/8766989/152694585-c5ab7037-0954-4a8a-af28-4fdd046368d5.png)
+      At data aggregation time, new attributes are added/ updated (TotalCommissionPaid, NrTrades, TotalAmountInvested, Updated) and exixting ones (RemainingFund) updated.
       ![customer-update](https://user-images.githubusercontent.com/8766989/152694587-a1a6fcf4-198e-4418-80cf-3435073fff80.png)
      
 - Trades, TRADE#trade-date#trade-id: they are in a 1:n relationship with Customers.
