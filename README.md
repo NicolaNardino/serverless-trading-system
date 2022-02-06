@@ -1,6 +1,7 @@
 # Welcome to serveless-trading-system
 
 It covers the front-to-back high-level architecture of a trading system, from when an order gets entered, from a Broker UI, to the trade settlement, passing through simulated Dark and Lit Pools matching engines. The focus is on the overall infrastructure rather than on the actual matching engines. 
+
 It's a generalization of my previous project, [TradingMachine](https://github.com/NicolaNardino/TradingMachine).
 
 
