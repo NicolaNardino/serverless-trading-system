@@ -1,6 +1,7 @@
 # Welcome to serveless-trading-system
 
-It covers the front-to-back high-level architecture of a trading system, from the time an order gets entered from a Broker UI to the trade settlement, passing through simulated Dark and Lit Pools matching engines. The focus is on the overall infrastructure rather than on the actual matchin engines.
+It covers the front-to-back high-level architecture of a trading system, from when an order gets entered, from a Broker UI, to the trade settlement, passing through simulated Dark and Lit Pools matching engines. The focus is on the overall infrastructure rather than on the actual matching engines. 
+It's a generalization of my previous project, [TradingMachine](https://github.com/NicolaNardino/TradingMachine).
 
 
 Main technologies used:
@@ -84,4 +85,5 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 
 ## TODO
 
-Infra set-up by via SAM or CDK.
+- Infra set-up by SAM or CDK.
+- Replace SNS with EventBridge.
