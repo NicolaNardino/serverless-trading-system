@@ -69,7 +69,7 @@ There are 3 entity tpyes:
 - Trades, TRADE#trade-date#trade-id: they are in a 1:n relationship with Customers.
       ![trade](https://user-images.githubusercontent.com/8766989/152694589-f1440cde-2383-49b2-b55a-26c0a0022479.png)
       
-- Tickers, TICKER#ticker-id: they are an outcome of the trade aggregation step, where trade data get aggregated at ticker leve.
+- Tickers, TICKER#ticker-id: they are an outcome of the trade aggregation step, where trade data get aggregated at ticker level.
       ![ticker](https://user-images.githubusercontent.com/8766989/152694588-a1a7e492-5139-4dc6-9e4e-9422eaad8e47.png)
 
 ## Notes
