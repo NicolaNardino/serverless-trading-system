@@ -1,6 +1,8 @@
 # Welcome to serveless-trading-system
 
-It covers the front-to-back high-level architecture of a trading system, from the time an order gets entered from a Broker UI to the trade settlement, passing through simulated Dark and Lit Pools matching engines. The focus is on the overall infrastructure rather than on the actual matchin engines.
+It covers the front-to-back high-level architecture of a trading system, from when an order gets entered, from a Broker UI, to the trade settlement, passing through simulated Dark and Lit Pools matching engines. The focus is on the overall infrastructure rather than on the actual matching engines. 
+
+It's a generalization of my previous project, [TradingMachine](https://github.com/NicolaNardino/TradingMachine).
 
 
 Main technologies used:
@@ -11,7 +13,7 @@ The gist of it is that all goes around a message bus: a pure pub/ sub serveless 
 
 ## Software Architecture
 
-![serverless-trading-system](https://user-images.githubusercontent.com/8766989/152017583-dd130d2f-dd51-41aa-ad41-5a2b672fa5f0.jpg)
+![main-arch](https://user-images.githubusercontent.com/8766989/152656255-14ce7c58-77d2-41ef-88c8-ba5a312c7036.jpg)
 
 
 ## Order flow
@@ -54,8 +56,21 @@ And get out so:
 
 According to the following order flow:
 
-![OrderFlow](https://user-images.githubusercontent.com/8766989/152015767-85af6dfb-f2b6-407d-a5de-6d4d9bfb1dce.jpg)
+![OrderFlow (1)](https://user-images.githubusercontent.com/8766989/152655833-91fd0277-7e5e-450b-85e0-9cd456b1deed.jpg)
 
+## DynamoDB Data Layer
+
+There are 3 entity tpyes:
+- Customers, CUST#cust-id: their initial data get entered at system initialization time, then enriched with stats during the data aggregation step.
+      ![customer-init](https://user-images.githubusercontent.com/8766989/152694585-c5ab7037-0954-4a8a-af28-4fdd046368d5.png)
+      At data aggregation time, new attributes are added/ updated (TotalCommissionPaid, NrTrades, TotalAmountInvested, Updated) and exixting ones (RemainingFund) updated.
+      ![customer-update](https://user-images.githubusercontent.com/8766989/152694587-a1a6fcf4-198e-4418-80cf-3435073fff80.png)
+     
+- Trades, TRADE#trade-date#trade-id: they are in a 1:n relationship with Customers.
+      ![trade](https://user-images.githubusercontent.com/8766989/152694589-f1440cde-2383-49b2-b55a-26c0a0022479.png)
+      
+- Tickers, TICKER#ticker-id: they are an outcome of the trade aggregation step, where trade data get aggregated at ticker level.
+      ![ticker](https://user-images.githubusercontent.com/8766989/152694588-a1a7e492-5139-4dc6-9e4e-9422eaad8e47.png)
 
 ## Notes
 
@@ -72,6 +87,11 @@ See [here](https://aws.amazon.com/blogs/compute/using-node-js-es-modules-and-top
 ### Lambda Proxy Integration
 The 2 API Gateways, SmartOrderRouter-API & DataExtractor-API, use the Lamba Proxy Integration, i.e., /{proxy+}. 
 
+![data-access-layer](https://user-images.githubusercontent.com/8766989/152656258-b3a5b64c-20f5-485b-8bf5-2d741e7635fa.jpg)
+
+### Lambda Layer
+![lambda-layers](https://user-images.githubusercontent.com/8766989/152656253-62478427-945a-48e4-b36b-ce0f648f50e0.jpg)
+
 ### Dark & Lit Pools
 While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by the broader audience, in fact, they're the commonly known Stock Exchanges, the same can't be said about [Dark Pools](https://en.wikipedia.org/wiki/Dark_pool).
 
@@ -79,4 +99,5 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 
 ## TODO
 
-Infra set-up by via SAM or CDK.
+- Infra set-up by SAM or CDK.
+- Replace SNS with EventBridge.
