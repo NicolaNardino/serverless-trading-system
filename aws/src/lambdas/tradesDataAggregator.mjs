@@ -1,9 +1,5 @@
-import { delay } from '/opt/nodejs/src/utils.js';
-import { DynamoDBClient, DynamoDBDocumentClient, UpdateCommand } from '/opt/nodejs/src/dependencies.js';
-
-const region = { region: 'us-east-2' };
-const dynamoDBClient = new DynamoDBClient(region);
-const ddbDocClient = DynamoDBDocumentClient.from(dynamoDBClient);
+import { delay, ddbDocClient } from '/opt/nodejs/src/utils.js';
+import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
 
 export async function handler(event) {
     //console.log(event);
@@ -50,25 +46,25 @@ export async function handler(event) {
                     ExpressionAttributeValues: {
                         ':Count': 1,
                         ':Fee': parseFloat(record.dynamodb.NewImage.Fee.S),
-                        ':AmountInvested': parseFloat(record.dynamodb.NewImage.Price.S) * parseFloat(record.dynamodb.NewImage.Quantity.N), 
+                        ':AmountInvested': parseFloat(record.dynamodb.NewImage.Price.S) * parseFloat(record.dynamodb.NewImage.Quantity.N),
                         ':Start': 0,
                         ':Now': Date.now()
                     },
-                    UpdateExpression: 'SET #NrTrades = if_not_exists(#NrTrades, :Start) + :Count, #TotalCommissionPaid = if_not_exists(#TotalCommissionPaid, :Start) + :Fee, '+
-                    '#TotalAmountInvested = if_not_exists(#TotalAmountInvested, :Start) + :AmountInvested, #RemainingFunds = #RemainingFunds - :AmountInvested, #Updated = :Now'
+                    UpdateExpression: 'SET #NrTrades = if_not_exists(#NrTrades, :Start) + :Count, #TotalCommissionPaid = if_not_exists(#TotalCommissionPaid, :Start) + :Fee, ' +
+                        '#TotalAmountInvested = if_not_exists(#TotalAmountInvested, :Start) + :AmountInvested, #RemainingFunds = #RemainingFunds - :AmountInvested, #Updated = :Now'
                 };
                 await ddbDocClient.send(new UpdateCommand(customerUpdateExpr));
                 //console.log('Updated key: '+JSON.stringify(customerUpdateExpr.Key));
                 await delay(200);
-        }
-        catch (e) {
-            console.log(e);
-        }
+            }
+            catch (e) {
+                console.log(e);
+            }
 
-    }
-};
-return {
-    statusCode: 200,
-    body: JSON.stringify('All good.'),
-};
+        }
+    };
+    return {
+        statusCode: 200,
+        body: JSON.stringify('All good.'),
+    };
 };

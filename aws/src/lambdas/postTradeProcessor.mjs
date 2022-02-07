@@ -1,12 +1,10 @@
-import { delay, publishToSns } from '/opt/nodejs/src/utils.js';
-import { randomUUID, SNSClient, S3Client, PutObjectCommand, SSMClient, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, PutCommand } from '/opt/nodejs/src/dependencies.js';
+import { delay, publishToSns, ddbDocClient } from '/opt/nodejs/src/utils.js';
+import { randomUUID, SNSClient, S3Client, PutObjectCommand, SSMClient, GetParametersCommand, PutCommand } from '/opt/nodejs/src/dependencies.js';
 
 const region = { region: 'us-east-2' };
 const snsClient = new SNSClient(region);
 const ssmClient = new SSMClient(region);
 const s3Client = new S3Client(region);
-const dynamoDBClient = new DynamoDBClient(region);
-const ddbDocClient = DynamoDBDocumentClient.from(dynamoDBClient);
 
 const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/s3-trades-storage']}))).Parameters.map(p => [p.Name, p.Value]));
 const tradesStorage = paramValues.get('/darkpool/dev/s3-trades-storage');
@@ -31,7 +29,6 @@ export async function handler(event) {
                 TableName: "trades",
                 Item: {
                     "PK" : "CUST#"+trade.customerId,
-                    //"SK" : "TRADE#"+new Date(trade.tradeDate).toISOString().split('T')[0]+"#"+trade.tradeId,
                     "SK" : "TRADE#"+trade.tradeDate.split('T')[0]+"#"+trade.tradeId,
                     "Ticker" : trade.ticker,
                     "Direction" : trade.direction,

@@ -1,8 +1,5 @@
-import { DynamoDBClient, DynamoDBDocumentClient, UpdateCommand } from '/opt/nodejs/src/dependencies.js';
-
-const region = { region: 'us-east-2' };
-const dynamoDBClient = new DynamoDBClient(region);
-const ddbDocClient = DynamoDBDocumentClient.from(dynamoDBClient);
+import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
+import { ddbDocClient } from '/opt/nodejs/src/utils.js';
 
 const newFunds = 1000000;
 
