@@ -1,9 +1,7 @@
-import { delay, publishToSns, ddbDocClient } from '/opt/nodejs/src/utils.js';
-import { randomUUID, SNSClient, S3Client, PutObjectCommand, SSMClient, GetParametersCommand, PutCommand } from '/opt/nodejs/src/dependencies.js';
+import { delay, publishToSns, ddbDocClient, snsClient, ssmClient } from '/opt/nodejs/src/utils.js';
+import { randomUUID, S3Client, PutObjectCommand, GetParametersCommand, PutCommand } from '/opt/nodejs/src/dependencies.js';
 
 const region = { region: 'us-east-2' };
-const snsClient = new SNSClient(region);
-const ssmClient = new SSMClient(region);
 const s3Client = new S3Client(region);
 
 const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/s3-trades-storage']}))).Parameters.map(p => [p.Name, p.Value]));

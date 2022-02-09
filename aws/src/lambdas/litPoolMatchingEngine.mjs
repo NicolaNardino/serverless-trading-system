@@ -1,9 +1,5 @@
-import { getRandomArrayEntry, getRandom, publishToSns } from '/opt/nodejs/src/utils.js';
-import { randomUUID, SNSClient, SSMClient, GetParametersCommand } from '/opt/nodejs/src/dependencies.js';
-
-const region = { region: 'us-east-2' };
-const snsClient = new SNSClient(region);
-const ssmClient = new SSMClient(region);
+import { getRandomArrayEntry, getRandom, publishToSns, snsClient, ssmClient } from '/opt/nodejs/src/utils.js';
+import { randomUUID, GetParametersCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/litpools']}))).Parameters.map(p => [p.Name, p.Value]));
 const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');

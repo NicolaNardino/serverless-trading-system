@@ -1,11 +1,10 @@
-import { DynamoDBClient, DynamoDBDocumentClient, GetCommand, QueryCommand } from '/opt/nodejs/src/dependencies.js';
+import { GetCommand, QueryCommand } from '/opt/nodejs/src/dependencies.js';
+import { ddbDocClient } from '/opt/nodejs/src/utils.js';
 
-const region = { region: 'us-east-2' };
-const dynamoDBClient = new DynamoDBClient(region);
-const ddbDocClient = DynamoDBDocumentClient.from(dynamoDBClient);
 const tableName = "trades";
 
 export async function handler(event) {
+  console.log(event);
     let result;
     const path = event.path;
     if (event.httpMethod === 'GET') {
@@ -29,7 +28,7 @@ export async function handler(event) {
                 Key: {
                     PK: "CUST#"+customerId, 
                     SK: "CUST#"+customerId
-                },
+                }
             };
             result = (await ddbDocClient.send(new GetCommand(params))).Item;
         }
@@ -39,5 +38,5 @@ export async function handler(event) {
     return {
         statusCode: 200,
         body: JSON.stringify(result)
-    }
+    };
 }

@@ -1,9 +1,5 @@
-import { getRandomArrayEntry, getRandom, publishToSns } from '/opt/nodejs/src/utils.js';
-import { randomUUID, SNSClient, SSMClient, GetParametersCommand } from '/opt/nodejs/src/dependencies.js';
-
-const region = { region: 'us-east-2' };
-const snsClient = new SNSClient(region);
-const ssmClient = new SSMClient(region);
+import { getRandomArrayEntry, getRandom, publishToSns, snsClient, ssmClient } from '/opt/nodejs/src/utils.js';
+import { randomUUID, GetParametersCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpools']}))).Parameters.map(p => [p.Name, p.Value]));
 const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
@@ -12,7 +8,7 @@ const darkPools = paramValues.get('/darkpool/dev/darkpools').split(',');
 export async function handler(event) {
     const tradesAndNotMatchedWithinDarkPool = [];
     event.Records.forEach(record => {
-        //randomly match order within the DarkPool. If not matched, forward it to LitPools.
+        //randomly match order within the DarkPool. If not matched, forward it to LightPools.
             tradesAndNotMatchedWithinDarkPool.push(...JSON.parse(record.Sns.Message).map(order => {
                 if (getRandomBoolean())
                     return { ...order, 

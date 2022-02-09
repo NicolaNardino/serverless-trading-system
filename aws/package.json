@@ -1,9 +1,9 @@
 {
   "type": "module",
   "dependencies": {
-    "aws-api-gateway-client": "^0.3.7",
     "aws-sdk": "^2.1048.0",
     "crypto": "^1.0.1",
-    "dateformat": "^5.0.2"
+    "dateformat": "^5.0.2",
+    "node-fetch": "^3.2.0"
   }
 }

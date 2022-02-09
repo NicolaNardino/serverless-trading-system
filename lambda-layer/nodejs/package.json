@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.48.0",
+    "@aws-sdk/client-eventbridge": "^3.50.0",
     "@aws-sdk/client-s3": "^3.47.1",
     "@aws-sdk/client-sns": "^3.47.1",
     "@aws-sdk/client-ssm": "^3.47.1",

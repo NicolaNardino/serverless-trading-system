@@ -1,6 +1,4 @@
-import { PublishCommand, DynamoDBClient, DynamoDBDocumentClient } from "./dependencies.js";
-
-const region = { region: 'us-east-2' };
+import { PublishCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, EventBridgeClient } from "./dependencies.js";
 
 const getRandomInteger = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -12,7 +10,11 @@ const getRandomArrayEntry = (array) => array[Math.floor(Math.random() * array.le
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+const region = { region: 'us-east-2' };
 const ddbDocClient = DynamoDBDocumentClient.from(new DynamoDBClient(region));
+const snsClient = new SNSClient(region);
+const ssmClient = new SSMClient(region);
+const eventBridgeClient = new EventBridgeClient(region);
 
 const publishToSns = async (snsClient, topicArn, message, messageAttributes) => {
     console.log('About to publish message ', JSON.stringify(message), ' to the topic ', topicArn);
@@ -37,5 +39,8 @@ export {
     getRandomArrayEntry,
     delay,
     publishToSns,
-    ddbDocClient
+    ddbDocClient,
+    snsClient,
+    ssmClient,
+    eventBridgeClient
 }
