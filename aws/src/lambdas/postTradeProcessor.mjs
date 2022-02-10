@@ -1,8 +1,5 @@
-import { delay, publishToSns, ddbDocClient, snsClient, ssmClient } from '/opt/nodejs/src/utils.js';
-import { randomUUID, S3Client, PutObjectCommand, GetParametersCommand, PutCommand } from '/opt/nodejs/src/dependencies.js';
-
-const region = { region: 'us-east-2' };
-const s3Client = new S3Client(region);
+import { delay, publishToSns, ddbDocClient, snsClient, ssmClient, s3Client } from '/opt/nodejs/src/utils.js';
+import { randomUUID, PutObjectCommand, GetParametersCommand, PutCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/s3-trades-storage']}))).Parameters.map(p => [p.Name, p.Value]));
 const tradesStorage = paramValues.get('/darkpool/dev/s3-trades-storage');
@@ -61,4 +58,4 @@ export async function handler(event) {
         statusCode: 200,
         body: JSON.stringify('Trades have been post-processed.'),
     };
-};
+}

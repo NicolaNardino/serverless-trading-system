@@ -1,4 +1,4 @@
-import { PublishCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, EventBridgeClient } from "./dependencies.js";
+import { PublishCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient } from "./dependencies.js";
 
 const getRandomInteger = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -14,6 +14,7 @@ const region = { region: 'us-east-2' };
 const ddbDocClient = DynamoDBDocumentClient.from(new DynamoDBClient(region));
 const snsClient = new SNSClient(region);
 const ssmClient = new SSMClient(region);
+const s3Client = new S3Client(region);
 const eventBridgeClient = new EventBridgeClient(region);
 
 const publishToSns = async (snsClient, topicArn, message, messageAttributes) => {
@@ -42,5 +43,6 @@ export {
     ddbDocClient,
     snsClient,
     ssmClient,
+    s3Client,
     eventBridgeClient
 }
