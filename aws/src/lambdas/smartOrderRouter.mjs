@@ -2,11 +2,12 @@ import { publishToSns, ddbDocClient, snsClient, ssmClient, eventBridgeClient, ge
 import { randomUUID, GetParametersCommand, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpool-tickers-list', 
-'/darkpool/dev/message-bus-type', '/darkpool/dev/event-bus-name']}))).Parameters.map(p => [p.Name, p.Value]));
+'/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']}))).Parameters.map(p => [p.Name, p.Value]));
 const darkPoolTickers = paramValues.get('/darkpool/dev/darkpool-tickers-list').split(',');
 const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
-const messageBusType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
+const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
 const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
+
 
 export async function handler(event) {
     try {
@@ -18,7 +19,7 @@ export async function handler(event) {
         const invalidOrders = checkedOrders.invalidOrders;
         const darkPoolOrders = splitBlockOrders(addOrderIdAndDate(orders.filter(order => darkPoolTickers.includes(order.ticker))), 1000);
         const litPoolOrders = splitBlockOrders(addOrderIdAndDate(orders.filter(order => !darkPoolTickers.includes(order.ticker))), 1000);
-        if (messageBusType === 'EVENT-BRIDGE') {
+        if (busType === 'EVENT-BRIDGE') {
             const params = {
                 Entries: [
                 {
@@ -26,23 +27,27 @@ export async function handler(event) {
                     EventBusName: eventBusName,
                     DetailType: 'Orders',
                     Time: new Date(),
-                    PoolType: 'Dark',
-                    Detail: JSON.stringify(darkPoolOrders)
+                    Detail: JSON.stringify({//EventBridge doesn't allow to send straight arrays as Detail's content, although the docs say that it's sufficient to be a valid json object :), so I've to wrap the array with an attribute.
+                        poolType: 'Dark',
+                        orders: darkPoolOrders
+                    })
                 },
                 {
                     Source: 'SmartOrderRouter',
                     EventBusName: eventBusName,
                     DetailType: 'Orders',
                     Time: new Date(),
-                    PoolType: 'Lit',
-                    Detail: JSON.stringify(litPoolOrders)
+                    Detail: JSON.stringify({
+                        poolType: 'Lit',
+                        orders: litPoolOrders
+                    })
                 }
                 ]
             };
             const result = await eventBridgeClient.send(new PutEventsCommand(params));
-            console.log("Sent to EventBridge", result);
+            console.log(params, "sent to EventBridge with result", result);
         }
-        else if (messageBusType === 'SNS') {
+        else if (busType === 'SNS') {
             await Promise.all([publishToSns(snsClient, orderDispatcherTopicArn, litPoolOrders, {
                 "PoolType": {
                     "DataType": "String",
@@ -53,15 +58,15 @@ export async function handler(event) {
                     "DataType": "String",
                     "StringValue": "Dark"
                 }
-            }), 
-            publishToSns(snsClient, orderDispatcherTopicArn, invalidOrders, {
-                "InvalidOrders": {
-                    "DataType": "String",
-                    "StringValue": "CreditCheck"
-                }
             })]);
         }
-
+        if (invalidOrders.length > 0)
+            publishToSns(snsClient, orderDispatcherTopicArn, invalidOrders, {
+                    "InvalidOrders": {
+                        "DataType": "String",
+                        "StringValue": "CreditCheck"
+                    }
+                });
         return {
             statusCode: 200,
             body: JSON.stringify({
@@ -76,8 +81,8 @@ export async function handler(event) {
             statusCode: 500,
             body: JSON.stringify(e.message)
         };
-    };
-};
+    }
+}
 
 const creditCheck = async (orders, ddbDocClient) => {
     const validOrders = [];
@@ -104,11 +109,11 @@ const creditCheck = async (orders, ddbDocClient) => {
         }
     }
     return { validOrders: validOrders, invalidOrders: invalidOrders };
-}
+};
 
 const addOrderIdAndDate = orders => {
     return orders.map(order => {
-        return { ...order, orderId: randomUUID(), orderDate: new Date() }
+        return { ...order, orderId: randomUUID(), orderDate: new Date() };
     });
 };
 
