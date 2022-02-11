@@ -1,38 +1,63 @@
-import { getRandomArrayEntry, getRandom, publishToSns, snsClient, ssmClient } from '/opt/nodejs/src/utils.js';
-import { randomUUID, GetParametersCommand } from '/opt/nodejs/src/dependencies.js';
+import { getRandomArrayEntry, getRandom, publishToSns, snsClient, ssmClient, eventBridgeClient } from '/opt/nodejs/src/utils.js';
+import { randomUUID, GetParametersCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/litpools', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']}))).Parameters.map(p => [p.Name, p.Value]));
+const paramValues = new Map((await ssmClient.send(new GetParametersCommand({ Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/litpools', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name'] }))).Parameters.map(p => [p.Name, p.Value]));
 const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
 const litPools = paramValues.get('/darkpool/dev/litpools').split(',');
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
+const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
+
+function turnOrdersIntoTrades(orders) {
+    return orders.map(order => {
+        const randomExchange = getRandomArrayEntry(litPools);
+        const randomFee = (randomExchange == "EBS" ? getRandom(1, 10).toFixed(2) : getRandom(0, 1).toFixed(2)); //yes, EBS (CH) is way more expensive than US exchanges.
+        return {
+            ...order,
+            tradeId: randomUUID(),
+            exchange: randomExchange,
+            exchangeType: "LitPool",
+            tradeDate: new Date(),
+            fee: randomFee,
+            ...(order.type === "Market" ? { price: getRandom(100, 200).toFixed(2) } : {}),
+        };
+    });
+}
 
 export async function handler(event) {
     const trades = [];
-    if (busType === 'EVENT-BRIDGE') {
-        console.log(event);
-        //TODO...
-    }
-    else {
-    event.Records.forEach(record => {
-        trades.push(...JSON.parse(record.Sns.Message).map(order => {
-            const randomExchange = getRandomArrayEntry(litPools);
-            const randomFee = (randomExchange == "EBS" ? getRandom(1, 10).toFixed(2) : getRandom(0, 1).toFixed(2)); //yes, EBS (CH) is way more expensive than US exchanges.
-            return { ...order, 
-                    tradeId : randomUUID(), 
-                    exchange : randomExchange,
-                    exchangeType : "LitPool",
-                    tradeDate : new Date(),
-                    fee : randomFee,
-                    ...(order.type==="Market" ? { price : getRandom(100, 200).toFixed(2) } : {}),
+    switch (busType) {
+        case 'EVENT-BRIDGE':
+            //console.log(event); //event contains exactly the orders, due to a translation done in the EventBridge rule use to target this lambda: $.detail.Orders.
+            trades.push(...turnOrdersIntoTrades(event));
+            const params = {
+                Entries: [
+                    {
+                        Source: "LitPoolsMatchingEngine",
+                        EventBusName: eventBusName,
+                        DetailType: "Trades",
+                        Time: new Date(),
+                        Detail: JSON.stringify({
+                            PostTrade: "True",
+                            Trades: trades
+                        })
+                    }]
             };
-        }));
-    });
-    console.log(trades);
-    await publishToSns(snsClient, orderDispatcherTopicArn, trades, {"PostTrade": {
-                "DataType": "String",
-                "StringValue": "True"
-            }});    
+            const result = await eventBridgeClient.send(new PutEventsCommand(params));
+            console.log("Event sent to EventBridge with result:\n", result);
+            break;
+        case 'SNS':
+            event.Records.forEach(record => trades.push(...turnOrdersIntoTrades(JSON.parse(record.Sns.Message))));
+            await publishToSns(snsClient, orderDispatcherTopicArn, trades, {
+                "PostTrade": {
+                    "DataType": "String",
+                    "StringValue": "True"
+                }
+            });
+        default:
+            console.log('Not a valid busType[SNS, EVENT-BRIDGE]: ', busType);
     }
+    console.log(trades);
+
     return {
         statusCode: 200,
         body: {
