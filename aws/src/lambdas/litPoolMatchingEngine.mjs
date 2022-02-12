@@ -32,7 +32,7 @@ export async function handler(event) {
             const params = {
                 Entries: [
                     {
-                        Source: "LitPoolsMatchingEngine",
+                        Source: "LitPoolMatchingEngine",
                         EventBusName: eventBusName,
                         DetailType: "Trades",
                         Time: new Date(),
@@ -53,10 +53,11 @@ export async function handler(event) {
                     "StringValue": "True"
                 }
             });
+            break;
         default:
             console.log('Not a valid busType[SNS, EVENT-BRIDGE]: ', busType);
     }
-    console.log(trades);
+    console.log("Trades ", trades);
 
     return {
         statusCode: 200,

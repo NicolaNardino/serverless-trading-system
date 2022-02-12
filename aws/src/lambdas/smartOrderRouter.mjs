@@ -112,7 +112,8 @@ async function publishToSNSOrEventBridge(invalidOrders, darkPoolOrders, litPoolO
                         PoolType: 'Lit',
                         Orders: litPoolOrders
                     })
-                }]
+                }
+                ]
             };
             const result = await eventBridgeClient.send(new PutEventsCommand(params));
             console.log("Event sent to EventBridge with result:\n", result);
@@ -141,4 +142,3 @@ async function publishToSNSOrEventBridge(invalidOrders, darkPoolOrders, litPoolO
                 }
         });
 }
-

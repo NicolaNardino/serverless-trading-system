@@ -37,7 +37,7 @@ export async function handler(event) {
                 const params = {
                 Entries: [
                     {
-                        Source: "DarkPoolsMatchingEngine",
+                        Source: "DarkPoolMatchingEngine",
                         EventBusName: eventBusName,
                         DetailType: "Trades",
                         Time: new Date(),
@@ -47,7 +47,7 @@ export async function handler(event) {
                         })
                     },
                     {
-                        Source: "DarkPoolsMatchingEngine",
+                        Source: "DarkPoolMatchingEngine",
                         EventBusName: eventBusName,
                         DetailType: "Trades",
                         Time: new Date(),
@@ -77,7 +77,7 @@ export async function handler(event) {
         default: 
             console.log('Not a valid busType[SNS, EVENT-BRIDGE]: ', busType);
     }
-    console.log(tradesAndNotMatchedWithinDarkPool);
+    console.log("Trades ", tradesAndNotMatchedWithinDarkPool);
     
     return {
         statusCode: 200,
