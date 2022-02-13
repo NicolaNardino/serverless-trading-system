@@ -56,7 +56,7 @@ And get out so:
 
 According to the following order flow:
 
-![OrderFlow (1)](https://user-images.githubusercontent.com/8766989/152655833-91fd0277-7e5e-450b-85e0-9cd456b1deed.jpg)
+![OrderFlow (4)](https://user-images.githubusercontent.com/8766989/153770432-69f151e2-face-45de-8d72-0b5cc5551314.jpg)
 
 ## DynamoDB Data Layer
 
