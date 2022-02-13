@@ -22,14 +22,6 @@ export async function handler(event) {
         const litPoolOrders = splitBlockOrders(addOrderIdAndDate(orders.filter(order => !darkPoolTickers.includes(order.ticker))), 1000);
         await publishToSNSOrEventBridge(invalidOrders, darkPoolOrders, litPoolOrders);
         
-        //TEMP
-        /*if (invalidOrders.length > 0)
-                await publishToSns(snsClient, orderDispatcherTopicArn, invalidOrders, {
-                    "InvalidOrders": {
-                        "DataType": "String",
-                        "StringValue": "CreditCheck"
-                    }
-                });*/
         return {
             statusCode: 200,
             body: JSON.stringify({
