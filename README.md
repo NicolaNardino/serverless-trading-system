@@ -75,7 +75,24 @@ There are 3 entity tpyes:
 ## Notes
 
 ## EventBridge vs. SNS
-TODO
+- SNS Topic Subscriptions are replaced by Rules.
+- With the EventBridge, events can be massaged before arriving to customers, for instance, by removing the event envelope, so to have a boilerplate-free events retrieval in the target, for instance, Lambda. 
+Rule example:
+```json
+{
+  "detail-type": ["Orders"],
+  "source": ["SmartOrderRouter"],
+  "detail": {
+    "PoolType": ["Dark"]
+  }
+}
+```
+Part of the matched event target deliver:
+```unix
+$.detail.orders
+```
+Where detail is the event envelope.
+
 
 ### Node.js ES6 modules
 By using Node.js ES6 modules, it's possible to let the Lamba wait for its initialization to complete, i.e., before the handler gets invoked:
