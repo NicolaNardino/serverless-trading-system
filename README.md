@@ -7,13 +7,13 @@ It's a generalization of my previous project, [TradingMachine](https://github.co
 
 Main technologies used:
 - Node.js, Javascript ES6.
-- AWS: Lambda & Lambda Layers, API Gateway, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store.
+- AWS: Lambda & Lambda Layers, API Gateway, EventBridge, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store.
 
 The gist of it is that all goes around a message bus: a pure pub/ sub serveless software architecture. 
 
 ## Software Architecture
 
-![main-arch](https://user-images.githubusercontent.com/8766989/152656255-14ce7c58-77d2-41ef-88c8-ba5a312c7036.jpg)
+![main-arch (2)](https://user-images.githubusercontent.com/8766989/153771399-a4d42bdb-233f-4f9a-9353-3980380dec0d.jpg)
 
 
 ## Order flow
@@ -74,6 +74,9 @@ There are 3 entity tpyes:
 
 ## Notes
 
+## EventBridge vs. SNS
+TODO
+
 ### Node.js ES6 modules
 By using Node.js ES6 modules, it's possible to let the Lamba wait for its initialization to complete, i.e., before the handler gets invoked:
 
@@ -100,4 +103,3 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 ## TODO
 
 - Infra set-up by SAM or CDK.
-- Replace SNS with EventBridge.
