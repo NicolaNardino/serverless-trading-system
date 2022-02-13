@@ -1,8 +1,10 @@
 import { publishToSns, ddbDocClient, snsClient, ssmClient, eventBridgeClient, getRandom } from '/opt/nodejs/src/utils.js';
 import { randomUUID, GetParametersCommand, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = new Map((await ssmClient.send(new GetParametersCommand({Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpool-tickers-list', 
-'/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']}))).Parameters.map(p => [p.Name, p.Value]));
+const paramValues = new Map((await ssmClient.send(new GetParametersCommand({
+    Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpool-tickers-list',
+        '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']
+}))).Parameters.map(p => [p.Name, p.Value]));
 const darkPoolTickers = paramValues.get('/darkpool/dev/darkpool-tickers-list').split(',');
 const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
@@ -19,6 +21,15 @@ export async function handler(event) {
         const darkPoolOrders = splitBlockOrders(addOrderIdAndDate(orders.filter(order => darkPoolTickers.includes(order.ticker))), 1000);
         const litPoolOrders = splitBlockOrders(addOrderIdAndDate(orders.filter(order => !darkPoolTickers.includes(order.ticker))), 1000);
         await publishToSNSOrEventBridge(invalidOrders, darkPoolOrders, litPoolOrders);
+        
+        //TEMP
+        /*if (invalidOrders.length > 0)
+                await publishToSns(snsClient, orderDispatcherTopicArn, invalidOrders, {
+                    "InvalidOrders": {
+                        "DataType": "String",
+                        "StringValue": "CreditCheck"
+                    }
+                });*/
         return {
             statusCode: 200,
             body: JSON.stringify({
@@ -91,34 +102,12 @@ const splitBlockOrders = (orders, splitSize) => {
 async function publishToSNSOrEventBridge(invalidOrders, darkPoolOrders, litPoolOrders) {
     switch (busType) {
         case 'EVENT-BRIDGE':
-            const params = {
-                Entries: [
-                {
-                    Source: "SmartOrderRouter",
-                    EventBusName: eventBusName,
-                    DetailType: "Orders",
-                    Time: new Date(),
-                    Detail: JSON.stringify({//EventBridge doesn't allow to send straight arrays as Detail's content, although the docs say that it's sufficient to be a valid json object :), so I've to wrap the array with an attribute.
-                        PoolType: "Dark",
-                        Orders: darkPoolOrders
-                    })
-                },
-                {
-                    Source: "SmartOrderRouter",
-                    EventBusName: eventBusName,
-                    DetailType: "Orders",
-                    Time: new Date(),
-                    Detail: JSON.stringify({
-                        PoolType: 'Lit',
-                        Orders: litPoolOrders
-                    })
-                }
-                ]
-            };
-            const result = await eventBridgeClient.send(new PutEventsCommand(params));
+            const result = await eventBridgeClient.send(new PutEventsCommand({
+                Entries: buildEventBridgeOrders(invalidOrders, darkPoolOrders, litPoolOrders)
+            }));
             console.log("Event sent to EventBridge with result:\n", result);
             break;
-        case 'SNS': 
+        case 'SNS':
             await Promise.all([publishToSns(snsClient, orderDispatcherTopicArn, litPoolOrders, {
                 "PoolType": {
                     "DataType": "String",
@@ -130,15 +119,51 @@ async function publishToSNSOrEventBridge(invalidOrders, darkPoolOrders, litPoolO
                     "StringValue": "Dark"
                 }
             })]);
+            if (invalidOrders.length > 0)
+                await publishToSns(snsClient, orderDispatcherTopicArn, invalidOrders, {
+                    "InvalidOrders": {
+                        "DataType": "String",
+                        "StringValue": "CreditCheck"
+                    }
+                });
             break;
         default:
             console.log('Not a valid busType[SNS, EVENT-BRIDGE]: ', busType);
     }
+}
+
+function buildEventBridgeOrders(invalidOrders, darkPoolOrders, litPoolOrders) {
+    const entries = [
+        {
+            Source: "SmartOrderRouter",
+            EventBusName: eventBusName,
+            DetailType: "Orders",
+            Time: new Date(),
+            Detail: JSON.stringify({//EventBridge doesn't allow to send straight arrays as Detail's content, although the docs say that it's sufficient to be a valid json object :), so I've to wrap the array with an attribute.
+                PoolType: "Dark",
+                Orders: darkPoolOrders
+            })
+        },
+        {
+            Source: "SmartOrderRouter",
+            EventBusName: eventBusName,
+            DetailType: "Orders",
+            Time: new Date(),
+            Detail: JSON.stringify({
+                PoolType: 'Lit',
+                Orders: litPoolOrders
+            })
+        }];
     if (invalidOrders.length > 0)
-        await publishToSns(snsClient, orderDispatcherTopicArn, invalidOrders, {
-                "InvalidOrders": {
-                    "DataType": "String",
-                    "StringValue": "CreditCheck"
-                }
+        entries.push({
+            Source: "SmartOrderRouter",
+            EventBusName: eventBusName,
+            DetailType: "Orders",
+            Time: new Date(),
+            Detail: JSON.stringify({
+                InvalidOrders: 'CreditCheck',
+                Orders: invalidOrders
+            })
         });
+    return entries;
 }

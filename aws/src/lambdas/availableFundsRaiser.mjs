@@ -1,32 +1,46 @@
-import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
-import { ddbDocClient } from '/opt/nodejs/src/utils.js';
+import { UpdateCommand, GetParametersCommand } from '/opt/nodejs/src/dependencies.js';
+import { ddbDocClient, ssmClient } from '/opt/nodejs/src/utils.js';
 
-const newFunds = 1000000;
+const paramValues = new Map((await ssmClient.send(new GetParametersCommand({ Names: ['/darkpool/dev/bus-type'] }))).Parameters.map(p => [p.Name, p.Value]));
+const busType = paramValues.get('/darkpool/dev/bus-type');
 
 export async function handler(event) {
-    console.log(JSON.stringify(event));
-    for (const record of event.Records) {
-        const customerIds = [...new Set(JSON.parse(record.Sns.Message).map(order => order.customerId))]; //customerIds that need funds raised.
-        for (const customerId of customerIds) {
-            const params = {
-                    TableName: "trades",
-                    Key: {
-                        PK: "CUST#"+customerId,
-                        SK: "CUST#"+customerId,
-                    },
-                    ExpressionAttributeValues: {
-                        ':NewFunds': newFunds,
-                        ':Now': Date.now()
-                    },
-                    UpdateExpression: 'SET RemainingFunds = :NewFunds, Updated = :Now'
-                };
-            await ddbDocClient.send(new UpdateCommand(params));
-            console.log("Updated remaining funds of customerId", customerId, "to", newFunds);
-        }
+    //console.log(JSON.stringify(event));
+    switch (busType) {
+        case 'EVENT-BRIDGE':
+            await updateCustomersAvailableFunds(event); //no boilerplate code needed as in below SNS case, because event contains exactly the invalid orders.
+            break;
+        case 'SNS':
+            for (const record of event.Records)
+                await updateCustomersAvailableFunds(JSON.parse(record.Sns.Message));
+            break;
+        default:
+            console.log('Not a valid busType[SNS, EVENT-BRIDGE]: ', busType);
     }
-    
+
     return {
         statusCode: 200,
         body: JSON.stringify('Available funds raised'),
     };
+}
+
+async function updateCustomersAvailableFunds(orders) {
+    const newFunds = 1000000;
+    const customerIds = [...new Set(orders.map(order => order.customerId))]; //customerIds that need funds raised.
+    for (const customerId of customerIds) {
+        const params = {
+            TableName: "trades",
+            Key: {
+                PK: "CUST#" + customerId,
+                SK: "CUST#" + customerId,
+            },
+            ExpressionAttributeValues: {
+                ':NewFunds': newFunds,
+                ':Now': Date.now()
+            },
+            UpdateExpression: 'SET RemainingFunds = :NewFunds, Updated = :Now'
+        };
+        await ddbDocClient.send(new UpdateCommand(params));
+        console.log("Updated remaining funds of customerId", customerId, "to", newFunds);
+    }
 }

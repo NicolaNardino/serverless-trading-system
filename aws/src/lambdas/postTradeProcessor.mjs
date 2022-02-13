@@ -8,14 +8,12 @@ const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
 const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
 
 export async function handler(event) {
-    console.log(JSON.stringify(event));
+    //console.log(JSON.stringify(event));
     const today = new Date().toISOString().slice(0, 10);
+    const fileName = buildS3FileName(today);
     switch (busType) {
         case 'EVENT-BRIDGE':
-            const fileName = buildS3FileName(today);
-            await storeTradesInS3(tradesStorage, fileName, event);
-            await storeTradesInDynamoDB(event);
-            const result = await eventBridgeClient.send(new PutEventsCommand({
+            const result = await Promise.all([storeTradesInS3(tradesStorage, fileName, event), storeTradesInDynamoDB(event), eventBridgeClient.send(new PutEventsCommand({
                 Entries: [
                     {
                         Source: "PostTradeProcessor",
@@ -27,27 +25,23 @@ export async function handler(event) {
                             Trades: event
                         })
                     }]
-            }));
-            console.log("Event sent to EventBridge with result:\n", result);
+            }))]);
+            console.log("Event sent to EventBridge with result:\n", result[2]);
             break;
         case 'SNS':
             for (const record of event.Records) {
-                const fileName = buildS3FileName(today);
                 const trades = JSON.parse(record.Sns.Message);
-                await storeTradesInS3(tradesStorage, fileName, record.Sns.Message);
-                await storeTradesInDynamoDB(trades);
-                await publishToSns(snsClient, orderDispatcherTopicArn, trades, {
+                await Promise.all([storeTradesInS3(tradesStorage, fileName, record.Sns.Message), storeTradesInDynamoDB(trades), publishToSns(snsClient, orderDispatcherTopicArn, trades, {
                     "TradesSettled": {
                         "DataType": "String",
                         "StringValue": "True"
                     }
-                });
+                })]);
             }
             break;
         default:
             console.log('Not a valid busType[SNS, EVENT-BRIDGE]: ', busType);
     }
-
     return {
         statusCode: 200,
         body: JSON.stringify('Trades have been post-processed.'),
