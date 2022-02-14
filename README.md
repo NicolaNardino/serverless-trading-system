@@ -7,13 +7,13 @@ It's a generalization of my previous project, [TradingMachine](https://github.co
 
 Main technologies used:
 - Node.js, Javascript ES6.
-- AWS: Lambda & Lambda Layers, API Gateway, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store.
+- AWS: Lambda & Lambda Layers, API Gateway, EventBridge, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store.
 
 The gist of it is that all goes around a message bus: a pure pub/ sub serveless software architecture. 
 
 ## Software Architecture
 
-![main-arch](https://user-images.githubusercontent.com/8766989/152656255-14ce7c58-77d2-41ef-88c8-ba5a312c7036.jpg)
+![main-arch (2)](https://user-images.githubusercontent.com/8766989/153771399-a4d42bdb-233f-4f9a-9353-3980380dec0d.jpg)
 
 
 ## Order flow
@@ -56,7 +56,7 @@ And get out so:
 
 According to the following order flow:
 
-![OrderFlow (1)](https://user-images.githubusercontent.com/8766989/152655833-91fd0277-7e5e-450b-85e0-9cd456b1deed.jpg)
+![OrderFlow (4)](https://user-images.githubusercontent.com/8766989/153770432-69f151e2-face-45de-8d72-0b5cc5551314.jpg)
 
 ## DynamoDB Data Layer
 
@@ -73,6 +73,26 @@ There are 3 entity tpyes:
       ![ticker](https://user-images.githubusercontent.com/8766989/152694588-a1a7e492-5139-4dc6-9e4e-9422eaad8e47.png)
 
 ## Notes
+
+## EventBridge vs. SNS
+- SNS Topic Subscriptions are replaced by Rules.
+- With the EventBridge, events can be massaged before arriving to customers, for instance, by removing the event envelope, so to have a boilerplate-free events retrieval in the target, for instance, Lambda. 
+Rule example:
+```json
+{
+  "detail-type": ["Orders"],
+  "source": ["SmartOrderRouter"],
+  "detail": {
+    "PoolType": ["Dark"]
+  }
+}
+```
+Part of the matched event target deliver:
+```unix
+$.detail.orders
+```
+Where detail is the event envelope.
+
 
 ### Node.js ES6 modules
 By using Node.js ES6 modules, it's possible to let the Lamba wait for its initialization to complete, i.e., before the handler gets invoked:
@@ -100,4 +120,3 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 ## TODO
 
 - Infra set-up by SAM or CDK.
-- Replace SNS with EventBridge.
