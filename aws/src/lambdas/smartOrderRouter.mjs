@@ -1,10 +1,7 @@
-import { publishToSns, ddbDocClient, snsClient, ssmClient, eventBridgeClient, getRandom } from '/opt/nodejs/src/utils.js';
-import { randomUUID, GetParametersCommand, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
+import { publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/src/utils.js';
+import { randomUUID, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = new Map((await ssmClient.send(new GetParametersCommand({
-    Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpool-tickers-list',
-        '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']
-}))).Parameters.map(p => [p.Name, p.Value]));
+const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpool-tickers-list', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
 const darkPoolTickers = paramValues.get('/darkpool/dev/darkpool-tickers-list').split(',');
 const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
@@ -25,7 +22,7 @@ export async function handler(event) {
         return {
             statusCode: 200,
             body: JSON.stringify({
-                message: `Successfully received ${orders.length} order(s)`,
+                message: `Successfully received ${orders.length} order(s)`, 
                 validOrders: orders,
                 invalidOrders: invalidOrders
             })
@@ -100,19 +97,19 @@ async function publishToSNSOrEventBridge(invalidOrders, darkPoolOrders, litPoolO
             console.log("Event sent to EventBridge with result:\n", result);
             break;
         case 'SNS':
-            await Promise.all([publishToSns(snsClient, orderDispatcherTopicArn, litPoolOrders, {
+            await Promise.all([publishToSns(orderDispatcherTopicArn, litPoolOrders, {
                 "PoolType": {
                     "DataType": "String",
                     "StringValue": "Lit"
                 }
-            }), publishToSns(snsClient, orderDispatcherTopicArn, darkPoolOrders, {
+            }), publishToSns(orderDispatcherTopicArn, darkPoolOrders, {
                 "PoolType": {
                     "DataType": "String",
                     "StringValue": "Dark"
                 }
             })]);
             if (invalidOrders.length > 0)
-                await publishToSns(snsClient, orderDispatcherTopicArn, invalidOrders, {
+                await publishToSns(orderDispatcherTopicArn, invalidOrders, {
                     "InvalidOrders": {
                         "DataType": "String",
                         "StringValue": "CreditCheck"
@@ -157,5 +154,6 @@ function buildEventBridgeOrders(invalidOrders, darkPoolOrders, litPoolOrders) {
                 Orders: invalidOrders
             })
         });
+        
     return entries;
 }

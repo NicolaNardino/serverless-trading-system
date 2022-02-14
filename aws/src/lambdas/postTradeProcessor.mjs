@@ -1,7 +1,7 @@
-import { delay, publishToSns, ddbDocClient, snsClient, ssmClient, s3Client, eventBridgeClient } from '/opt/nodejs/src/utils.js';
-import { randomUUID, PutObjectCommand, GetParametersCommand, PutCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
+import { delay, publishToSns, getParameters, ddbDocClient, s3Client, eventBridgeClient } from '/opt/nodejs/src/utils.js';
+import { randomUUID, PutObjectCommand, PutCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = new Map((await ssmClient.send(new GetParametersCommand({ Names: ['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/s3-trades-storage', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name'] }))).Parameters.map(p => [p.Name, p.Value]));
+const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/s3-trades-storage', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
 const tradesStorage = paramValues.get('/darkpool/dev/s3-trades-storage');
 const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
@@ -31,7 +31,7 @@ export async function handler(event) {
         case 'SNS':
             for (const record of event.Records) {
                 const trades = JSON.parse(record.Sns.Message);
-                await Promise.all([storeTradesInS3(tradesStorage, fileName, record.Sns.Message), storeTradesInDynamoDB(trades), publishToSns(snsClient, orderDispatcherTopicArn, trades, {
+                await Promise.all([storeTradesInS3(tradesStorage, fileName, record.Sns.Message), storeTradesInDynamoDB(trades), publishToSns(orderDispatcherTopicArn, trades, {
                     "TradesSettled": {
                         "DataType": "String",
                         "StringValue": "True"

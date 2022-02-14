@@ -1,7 +1,7 @@
-import { UpdateCommand, GetParametersCommand } from '/opt/nodejs/src/dependencies.js';
-import { ddbDocClient, ssmClient } from '/opt/nodejs/src/utils.js';
+import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
+import { ddbDocClient, getParameters } from '/opt/nodejs/src/utils.js';
 
-const paramValues = new Map((await ssmClient.send(new GetParametersCommand({ Names: ['/darkpool/dev/bus-type'] }))).Parameters.map(p => [p.Name, p.Value]));
+const paramValues = await getParameters(['/darkpool/dev/bus-type']);
 const busType = paramValues.get('/darkpool/dev/bus-type');
 
 export async function handler(event) {
