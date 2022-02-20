@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
-import {SmartOrderRouterInvokeUrl, DataExtractorInvokeUrl, ApiKey } from '../sandbox/constants.js' //this is excluded from the git repo.
-import {getRandom, getRandomInteger, getRandomArrayEntry} from '../../lambda-layer/nodejs/src/utils.js';
+import {SmartOrderRouterInvokeUrl, DataExtractorInvokeUrl, ApiKey } from './sandbox/constants.js' //this is excluded from the git repo.
+import {getRandom, getRandomInteger, getRandomArrayEntry} from '../lambda-layer/nodejs/src/utils.js';
 
 async function getCustomerTrades() {
     const response = await fetch(DataExtractorInvokeUrl + 'trades/000007?tradeDate=2022-01-22', {//customers/000007
