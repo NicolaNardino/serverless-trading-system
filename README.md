@@ -13,8 +13,30 @@ The gist of it is that all goes around a message bus: a pure pub/ sub serveless 
 
 ## Software Architecture
 
-![main-arch (2)](https://user-images.githubusercontent.com/8766989/153771399-a4d42bdb-233f-4f9a-9353-3980380dec0d.jpg)
+![main-arch (3)](https://user-images.githubusercontent.com/8766989/153915513-930d5631-71d1-4ee7-9418-3e19799478c3.jpg)
 
+The same pub/ sub and event-driven architecture can be represented with the EventBridge instead of the good old SNS. The application is able to work with both message buses, and it's possible to switch between them by the means of a AWS Systems Manager Parameter Store param, /darkpool/dev/bus-type, whose values can be SNS or EVENT-BRIDGE.
+
+![main-arch-with-event-bridge (2)](https://user-images.githubusercontent.com/8766989/153917044-76f85275-fd30-46d3-8894-de3c6deb1903.jpg)
+
+The client-side programming model is nearly the same, while SNS Topic Subscriptions are replaced by EventBridge Rules.
+With the EventBridge, source events can be modified before getting to consumers, for instance, by removing the event envelope, so to have a boilerplate-free events retrieval code, for instance, in the target Lambdas. 
+
+Rule example:
+```json
+{
+  "detail-type": ["Orders"],
+  "source": ["SmartOrderRouter"],
+  "detail": {
+    "PoolType": ["Dark"]
+  }
+}
+```
+Part of the matched event target deliver:
+```unix
+$.detail.orders
+```
+Where detail is the event envelope. In this way, only the array of orders will be delivered to the target. Compare that with the boilerplate code require in a SNS subscriber.
 
 ## Order flow
 
@@ -73,26 +95,6 @@ There are 3 entity tpyes:
       ![ticker](https://user-images.githubusercontent.com/8766989/152694588-a1a7e492-5139-4dc6-9e4e-9422eaad8e47.png)
 
 ## Notes
-
-## EventBridge vs. SNS
-- SNS Topic Subscriptions are replaced by Rules.
-- With the EventBridge, events can be massaged before arriving to customers, for instance, by removing the event envelope, so to have a boilerplate-free events retrieval in the target, for instance, Lambda. 
-Rule example:
-```json
-{
-  "detail-type": ["Orders"],
-  "source": ["SmartOrderRouter"],
-  "detail": {
-    "PoolType": ["Dark"]
-  }
-}
-```
-Part of the matched event target deliver:
-```unix
-$.detail.orders
-```
-Where detail is the event envelope.
-
 
 ### Node.js ES6 modules
 By using Node.js ES6 modules, it's possible to let the Lamba wait for its initialization to complete, i.e., before the handler gets invoked:
