@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  serverless-trading-system SAM stack
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Parameters:
+  DDBTableName:
+    Type: String
+    Default: trades1
+
+Resources:
+  DDBTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Ref DDBTableName
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+  DDBStreamProcessingLambda:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: tradesDataAggregator_sam
+      CodeUri: aws/src/lambdas/tradesDataAggregator/
+      Handler: tradesDataAggregator.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+      # Read more about SAM policy templates here
+      # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - AWSLambdaDynamoDBExecutionRole
+        - DynamoDBWritePolicy: 
+            TableName: !Ref DDBTable
+      Architectures:
+        - x86_64
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt DDBTable.StreamArn
+            BatchSize: 100
+            StartingPosition: LATEST
+  
+  SamTradingSystemLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: sam-trading-system-lambda-layer
+            Description: Dependencies for sam-trading-system
+            ContentUri: dependencies/
+            CompatibleRuntimes:
+              - nodejs14.x
+            CompatibleArchitectures:
+              - x86_64
+            RetentionPolicy: Retain
