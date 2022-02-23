@@ -1,4 +1,4 @@
-# Welcome to serveless-trading-system
+# Welcome to serverless-trading-system
 
 It covers the front-to-back high-level architecture of a trading system, from when an order gets entered, from a Broker UI, to the trade settlement, passing through simulated Dark and Lit Pools matching engines. The focus is on the overall infrastructure rather than on the actual matching engines. 
 
@@ -119,6 +119,6 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 
 
 
-## TODO
+## In Progress
 
-- Infra set-up by SAM or CDK.
+- SAM infra set-up.
