@@ -11,9 +11,20 @@ Globals:
 Parameters:
   DDBTableName:
     Type: String
-    Default: trades1
+    Default: trades
 
 Resources:
+  DataExtractorAPIDeployment:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Name: DataExtractorAPI
+  SmartOrderRouterAPIDeployment:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Name: SmartOrderRouterAPI
+
   DDBTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
@@ -38,7 +49,7 @@ Resources:
   DDBStreamProcessingLambda:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      FunctionName: tradesDataAggregator_sam
+      FunctionName: TradesDataAggregator_sam
       CodeUri: aws/src/lambdas/tradesDataAggregator/
       Handler: tradesDataAggregator.handler
       Layers:
@@ -59,6 +70,51 @@ Resources:
             Stream: !GetAtt DDBTable.StreamArn
             BatchSize: 100
             StartingPosition: LATEST
+  DataExtractorLambda:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: DataExtractor_sam
+      CodeUri: aws/src/lambdas/dataExtractor/
+      Handler: dataExtractor.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+        - DynamoDBReadPolicy: 
+            TableName: !Ref DDBTable
+      Architectures:
+        - x86_64
+      Events:
+        DataExtractorAPI:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref DataExtractorAPIDeployment
+  SmartOrderRouterLambda:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: SmartOrderRouter_sam
+      CodeUri: aws/src/lambdas/smartOrderRouter/
+      Handler: smartOrderRouter.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+        - DynamoDBReadPolicy: 
+            TableName: !Ref DDBTable
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+      
+      Architectures:
+        - x86_64
+      Events:
+        SmartOrderRouterAPI:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref SmartOrderRouterAPIDeployment
   
   SamTradingSystemLayer:
         Type: AWS::Serverless::LayerVersion
