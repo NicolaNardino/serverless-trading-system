@@ -11,7 +11,10 @@ Globals:
 Parameters:
   DDBTableName:
     Type: String
-    Default: trades
+    Default: TradesStore
+  TopicName:
+    Type: String
+    Default: OrdersDispatcherTopic
 
 Resources:
   DataExtractorAPIDeployment:
@@ -27,7 +30,7 @@ Resources:
 
   DDBTable:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
+    #DeletionPolicy: Retain
     Properties:
       TableName: !Ref DDBTableName
       AttributeDefinitions:
@@ -105,7 +108,8 @@ Resources:
             TableName: !Ref DDBTable
         - SSMParameterReadPolicy:
             ParameterName: "*"
-      
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref TopicName
       Architectures:
         - x86_64
       Events:
@@ -116,6 +120,21 @@ Resources:
             Method: ANY
             RestApiId: !Ref SmartOrderRouterAPIDeployment
   
+  OrdersDispatcherTopic:
+   Type: AWS::SNS::Topic
+   Properties:
+     TopicName: !Ref TopicName
+     Subscription:
+       - Protocol: lambda
+         Endpoint: !GetAtt SmartOrderRouterLambda.Arn
+  # Provide permission for SNS to invoke the Lambda function
+  SmartOrderRouterLambdaConsumerPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref SmartOrderRouterLambda
+      Principal: sns.amazonaws.com
+
   SamTradingSystemLayer:
         Type: AWS::Serverless::LayerVersion
         Properties:
@@ -127,3 +146,7 @@ Resources:
             CompatibleArchitectures:
               - x86_64
             RetentionPolicy: Retain
+Outputs:
+  OrdersDispatcherTopicARN:
+    Description: OrdersDispatcherTopic ARN
+    Value: !Ref OrdersDispatcherTopic
