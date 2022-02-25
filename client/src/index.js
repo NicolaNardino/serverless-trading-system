@@ -12,13 +12,11 @@ async function getCustomerTrades() {
     return await response.json();
 }
 
-async function postOrders(randomOrders) {
-    const response = await fetch(SmartOrderRouterInvokeUrl + 'orders', {
+async function postOrders(randomOrders, apiUrl, apiKeyRequired = false) {
+    const response = await fetch(apiUrl + 'orders', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json',
-                  'x-api-key': ApiKey
-                 },
-        body: JSON.stringify(randomOrders)
+        body: JSON.stringify(randomOrders),
+        ...(apiKeyRequired ? {headers: {'Content-Type': 'application/json','x-api-key': ApiKey}} : {}),
     });
     return await response.json();
 }
@@ -26,7 +24,7 @@ async function postOrders(randomOrders) {
 
 
 (async () => {
-    //storeCustomersInfo("trades1");
+    await storeCustomersInfo("TradesStore");
     //console.log(await getCustomerTrades());
-    console.log(await postOrders(buildRandomOrders(12)));
+    //console.log(await postOrders(buildRandomOrders(12), SmartOrderRouterInvokeUrl));
 })();

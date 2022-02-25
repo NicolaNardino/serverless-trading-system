@@ -1,8 +1,10 @@
 import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
-import { ddbDocClient, getParameters } from '/opt/nodejs/src/utils.js';
+import { getDefaultIfUndefined, ddbDocClient, getParameters } from '/opt/nodejs/src/utils.js';
 
 const paramValues = await getParameters(['/darkpool/dev/bus-type']);
 const busType = paramValues.get('/darkpool/dev/bus-type');
+
+const tableName = getDefaultIfUndefined(process.env.ddbTableName, "trades");
 
 export async function handler(event) {
     //console.log(JSON.stringify(event));
@@ -29,7 +31,7 @@ async function updateCustomersAvailableFunds(orders) {
     const customerIds = [...new Set(orders.map(order => order.customerId))]; //customerIds that need funds raised.
     for (const customerId of customerIds) {
         const params = {
-            TableName: "trades",
+            TableName: tableName,
             Key: {
                 PK: "CUST#" + customerId,
                 SK: "CUST#" + customerId,

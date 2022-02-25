@@ -2,7 +2,6 @@ import { getRandomArrayEntry, getRandom, getRandomBoolean, publishToSns, getPara
 import { randomUUID, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpools', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
-const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
 const darkPools = paramValues.get('/darkpool/dev/darkpools').split(',');
 const busType = paramValues.get('/darkpool/dev/bus-type');
 const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
@@ -40,13 +39,14 @@ export async function handler(event) {
             console.log("Event sent to EventBridge with result:\n", result);
             break;
         case 'SNS':
+            const topicArn = event.Records[0].Sns.TopicArn;
             event.Records.forEach(record => tradesAndNotMatchedWithinDarkPool.push(...turnOrdersIntoTradesOrLitPoolsOrders(JSON.parse(record.Sns.Message))));
-            await Promise.all([await publishToSns(orderDispatcherTopicArn, tradesAndNotMatchedWithinDarkPool.filter(t => t.exchangeType === "DarkPool"), {
+            await Promise.all([await publishToSns(topicArn, tradesAndNotMatchedWithinDarkPool.filter(t => t.exchangeType === "DarkPool"), {
                 "PostTrade": {
                     "DataType": "String",
                     "StringValue": "True"
                 }
-            }), publishToSns(orderDispatcherTopicArn, tradesAndNotMatchedWithinDarkPool.filter(t => t.notMatchedInDarkPool === "True"), {
+            }), publishToSns(topicArn, tradesAndNotMatchedWithinDarkPool.filter(t => t.notMatchedInDarkPool === "True"), {
                 "PoolType": {
                     "DataType": "String",
                     "StringValue": "Lit"

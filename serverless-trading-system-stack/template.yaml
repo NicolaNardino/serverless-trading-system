@@ -49,6 +49,7 @@ Resources:
         WriteCapacityUnits: 1
       StreamSpecification:
         StreamViewType: NEW_IMAGE
+  
   DDBStreamProcessingLambda:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -64,6 +65,9 @@ Resources:
         - AWSLambdaDynamoDBExecutionRole
         - DynamoDBWritePolicy: 
             TableName: !Ref DDBTable
+      Environment:
+        Variables:
+          ddbTableName: !Ref DDBTable
       Architectures:
         - x86_64
       Events:
@@ -74,7 +78,7 @@ Resources:
             BatchSize: 100
             StartingPosition: LATEST
   DataExtractorLambda:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: DataExtractor_sam
       CodeUri: aws/src/lambdas/dataExtractor/
@@ -85,6 +89,9 @@ Resources:
       Policies: 
         - DynamoDBReadPolicy: 
             TableName: !Ref DDBTable
+      Environment:
+        Variables:
+          ddbTableName: !Ref DDBTable
       Architectures:
         - x86_64
       Events:
@@ -95,7 +102,7 @@ Resources:
             Method: ANY
             RestApiId: !Ref DataExtractorAPIDeployment
   SmartOrderRouterLambda:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Type: AWS::Serverless::Function
     Properties:
       FunctionName: SmartOrderRouter_sam
       CodeUri: aws/src/lambdas/smartOrderRouter/
@@ -110,6 +117,10 @@ Resources:
             ParameterName: "*"
         - SNSPublishMessagePolicy:
             TopicName: !Ref TopicName
+      Environment:
+        Variables:
+          ddbTableName: !Ref DDBTable
+          ordersDispatcherTopicArn: !Ref OrdersDispatcherTopic
       Architectures:
         - x86_64
       Events:
@@ -119,20 +130,146 @@ Resources:
             Path: /{proxy+}
             Method: ANY
             RestApiId: !Ref SmartOrderRouterAPIDeployment
-  
+  LitPoolMatchingEngineLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: LitPoolMatchingEngine_sam
+      CodeUri: aws/src/lambdas/litPoolMatchingEngine/
+      Handler: litPoolMatchingEngine.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref TopicName
+      Architectures:
+        - x86_64
+  DarkPoolMatchingEngineLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: DarkPoolMatchingEngine_sam
+      CodeUri: aws/src/lambdas/darkPoolMatchingEngine/
+      Handler: darkPoolMatchingEngine.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref TopicName
+      Architectures:
+        - x86_64
+  AvailableFundsRaiserLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: AvailableFundsRaiser_sam
+      CodeUri: aws/src/lambdas/availableFundsRaiser/
+      Handler: availableFundsRaiser.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref TopicName
+        - DynamoDBWritePolicy: 
+            TableName: !Ref DDBTable
+      Environment:
+        Variables:
+          ddbTableName: !Ref DDBTable
+      Architectures:
+        - x86_64
+  PostTradeProcessorLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: PostTradeProcessor_sam
+      CodeUri: aws/src/lambdas/postTradeProcessor/
+      Handler: postTradeProcessor.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref TopicName
+        - DynamoDBWritePolicy: 
+            TableName: !Ref DDBTable
+      Environment:
+        Variables:
+          ddbTableName: !Ref DDBTable
+      Architectures:
+        - x86_64
+        
   OrdersDispatcherTopic:
    Type: AWS::SNS::Topic
    Properties:
      TopicName: !Ref TopicName
-     Subscription:
-       - Protocol: lambda
-         Endpoint: !GetAtt SmartOrderRouterLambda.Arn
+
+  OrdersDispatcherTopicLitPoolMatchingEngineLambdaSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt LitPoolMatchingEngineLambda.Arn
+      Protocol: lambda
+      TopicArn: !Ref OrdersDispatcherTopic
+      FilterPolicy:
+        PoolType:
+          - Lit
+  OrdersDispatcherTopicDarkPoolMatchingEngineLambdaSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt DarkPoolMatchingEngineLambda.Arn
+      Protocol: lambda
+      TopicArn: !Ref OrdersDispatcherTopic
+      FilterPolicy:
+        PoolType:
+          - Dark
+  OrdersDispatcherTopicAvailableFundsRaiserLambdaSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt AvailableFundsRaiserLambda.Arn
+      Protocol: lambda
+      TopicArn: !Ref OrdersDispatcherTopic
+      FilterPolicy:
+        InvalidOrders:
+          - CreditCheck
+  OrdersDispatcherTopicPostTradeProcessorLambdaSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt PostTradeProcessorLambda.Arn
+      Protocol: lambda
+      TopicArn: !Ref OrdersDispatcherTopic
+      FilterPolicy:
+        PostTrade:
+          - "True"
   # Provide permission for SNS to invoke the Lambda function
-  SmartOrderRouterLambdaConsumerPermission:
+  LitPoolMatchingEngineLambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref SmartOrderRouterLambda
+      FunctionName: !Ref LitPoolMatchingEngineLambda
+      Principal: sns.amazonaws.com
+  DarkPoolMatchingEngineLambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref DarkPoolMatchingEngineLambda
+      Principal: sns.amazonaws.com
+  AvailableFundsRaiserLambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref AvailableFundsRaiserLambda
+      Principal: sns.amazonaws.com
+  PostTradeProcessorLambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref PostTradeProcessorLambda
       Principal: sns.amazonaws.com
 
   SamTradingSystemLayer:
@@ -146,6 +283,7 @@ Resources:
             CompatibleArchitectures:
               - x86_64
             RetentionPolicy: Retain
+
 Outputs:
   OrdersDispatcherTopicARN:
     Description: OrdersDispatcherTopic ARN

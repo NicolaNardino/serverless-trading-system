@@ -2,7 +2,6 @@ import { getRandomArrayEntry, getRandom, publishToSns, getParameters, eventBridg
 import { randomUUID, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/litpools', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
-const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
 const litPools = paramValues.get('/darkpool/dev/litpools').split(',');
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
 const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
@@ -32,7 +31,7 @@ export async function handler(event) {
             break;
         case 'SNS':
             event.Records.forEach(record => trades.push(...turnOrdersIntoTrades(JSON.parse(record.Sns.Message))));
-            await publishToSns(orderDispatcherTopicArn, trades, {
+            await publishToSns(event.Records[0].Sns.TopicArn, trades, {
                 "PostTrade": {
                     "DataType": "String",
                     "StringValue": "True"

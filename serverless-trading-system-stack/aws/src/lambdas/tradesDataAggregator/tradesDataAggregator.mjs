@@ -1,5 +1,7 @@
-import { delay, ddbDocClient } from '/opt/nodejs/src/utils.js';
+import { getDefaultIfUndefined, delay, ddbDocClient } from '/opt/nodejs/src/utils.js';
 import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
+
+const tableName = getDefaultIfUndefined(process.env.ddbTableName, "trades");
 
 export async function handler(event) {
     //console.log(event);
@@ -9,7 +11,7 @@ export async function handler(event) {
         if ((record.eventName == 'INSERT') && (record.dynamodb.NewImage.TradeId)) {
             try {
                 const tickerUpdateExpr = {
-                    TableName: "trades",
+                    TableName: tableName,
                     Key: {
                         PK: "TICKER#" + record.dynamodb.NewImage.Ticker.S,
                         SK: today
@@ -31,7 +33,7 @@ export async function handler(event) {
                 //console.log('Updated key: '+ JSON.stringify(tickerUpdateExpr.Key));
                 const customer = record.dynamodb.NewImage.PK.S;
                 const customerUpdateExpr = {
-                    TableName: "trades",
+                    TableName: tableName,
                     Key: {
                         PK: customer,
                         SK: customer

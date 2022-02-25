@@ -1,11 +1,13 @@
-import { publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/src/utils.js';
+import { publishToSns, getParameters, getRandom, getDefaultIfUndefined, ddbDocClient, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpool-tickers-list', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
 const darkPoolTickers = paramValues.get('/darkpool/dev/darkpool-tickers-list').split(',');
-const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
 const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
+
+const tableName = getDefaultIfUndefined(process.env.ddbTableName, "trades");
+const ordersDispatcherTopicArn = getDefaultIfUndefined(process.env.ordersDispatcherTopicArn, paramValues.get('/darkpool/dev/order-dispatcher-topic-arn'));
 
 export async function handler(event) {
     try {
@@ -44,7 +46,7 @@ const creditCheck = async (orders, ddbDocClient) => {
         const potentialTradeValue = (orderPrice * order.quantity);
         //get the remaining funds available to the customer.
         const params = {
-            TableName: "trades",
+            TableName: tableName,
             Key: {
                 PK: "CUST#" + order.customerId,
                 SK: "CUST#" + order.customerId
@@ -97,19 +99,19 @@ async function publishToSNSOrEventBridge(invalidOrders, darkPoolOrders, litPoolO
             console.log("Event sent to EventBridge with result:\n", result);
             break;
         case 'SNS':
-            await Promise.all([publishToSns(orderDispatcherTopicArn, litPoolOrders, {
+            await Promise.all([publishToSns(ordersDispatcherTopicArn, litPoolOrders, {
                 "PoolType": {
                     "DataType": "String",
                     "StringValue": "Lit"
                 }
-            }), publishToSns(orderDispatcherTopicArn, darkPoolOrders, {
+            }), publishToSns(ordersDispatcherTopicArn, darkPoolOrders, {
                 "PoolType": {
                     "DataType": "String",
                     "StringValue": "Dark"
                 }
             })]);
             if (invalidOrders.length > 0)
-                await publishToSns(orderDispatcherTopicArn, invalidOrders, {
+                await publishToSns(ordersDispatcherTopicArn, invalidOrders, {
                     "InvalidOrders": {
                         "DataType": "String",
                         "StringValue": "CreditCheck"

@@ -1,11 +1,11 @@
-import { delay, publishToSns, getParameters, ddbDocClient, s3Client, eventBridgeClient } from '/opt/nodejs/src/utils.js';
+import { getDefaultIfUndefined, delay, publishToSns, getParameters, ddbDocClient, s3Client, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, PutObjectCommand, PutCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/s3-trades-storage', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
 const tradesStorage = paramValues.get('/darkpool/dev/s3-trades-storage');
-const orderDispatcherTopicArn = paramValues.get('/darkpool/dev/order-dispatcher-topic-arn');
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
 const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
+const tableName = getDefaultIfUndefined(process.env.ddbTableName, "trades");
 
 export async function handler(event) {
     //console.log(JSON.stringify(event));
@@ -31,7 +31,7 @@ export async function handler(event) {
         case 'SNS':
             for (const record of event.Records) {
                 const trades = JSON.parse(record.Sns.Message);
-                await Promise.all([storeTradesInS3(tradesStorage, fileName, record.Sns.Message), storeTradesInDynamoDB(trades), publishToSns(orderDispatcherTopicArn, trades, {
+                await Promise.all([storeTradesInS3(tradesStorage, fileName, record.Sns.Message), storeTradesInDynamoDB(trades), publishToSns(event.Records[0].Sns.TopicArn, trades, {
                     "TradesSettled": {
                         "DataType": "String",
                         "StringValue": "True"
@@ -65,7 +65,7 @@ async function storeTradesInDynamoDB(trades) {
         //console.log(JSON.stringify(trade));
         trade.settlementDate = new Date().toISOString();
         const params = {
-            TableName: "trades",
+            TableName: tableName,
             Item: {
                 "PK": "CUST#" + trade.customerId,
                 "SK": "TRADE#" + trade.tradeDate.split('T')[0] + "#" + trade.tradeId,

@@ -8,6 +8,8 @@ const getRandomBoolean = () => Math.random() < 0.5;
 
 const getRandomArrayEntry = (array) => array[Math.floor(Math.random() * array.length)];
 
+const getDefaultIfUndefined = (value, defaultValue) => (value === undefined ? defaultValue : value);
+
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const region = { region: 'us-east-2' };
@@ -46,6 +48,7 @@ export {
     delay,
     publishToSns,
     getParameters,
+    getDefaultIfUndefined,
     ddbDocClient,
     s3Client,
     eventBridgeClient
