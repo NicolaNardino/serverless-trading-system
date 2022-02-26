@@ -18,6 +18,9 @@ Parameters:
   TradesStorageS3BucketName:
     Type: String
     Default: serverless-trades-storage
+  EventBusName:
+    Type: String
+    Default: trading-system-event-bus-1
 
 Resources:
   DataExtractorAPIDeployment:
@@ -57,11 +60,16 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref TradesStorageS3BucketName    
+  
+  EventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Ref EventBusName
 
   TradesDataAggregatorLambda:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      FunctionName: TradesDataAggregator_sam
+      FunctionName: TradesDataAggregator
       CodeUri: aws/src/lambdas/tradesDataAggregator/
       Handler: tradesDataAggregator.handler
       Layers:
@@ -88,7 +96,7 @@ Resources:
   DataExtractorLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: DataExtractor_sam
+      FunctionName: DataExtractor
       CodeUri: aws/src/lambdas/dataExtractor/
       Handler: dataExtractor.handler
       Layers:
@@ -112,7 +120,7 @@ Resources:
   SmartOrderRouterLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: SmartOrderRouter_sam
+      FunctionName: SmartOrderRouter
       CodeUri: aws/src/lambdas/smartOrderRouter/
       Handler: smartOrderRouter.handler
       Layers:
@@ -125,10 +133,13 @@ Resources:
             ParameterName: "*"
         - SNSPublishMessagePolicy:
             TopicName: !Ref TopicName
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBusName
       Environment:
         Variables:
           ddbTableName: !Ref DDBTable
           ordersDispatcherTopicArn: !Ref OrdersDispatcherTopic
+          eventBusName: !Ref EventBusName
       Architectures:
         - x86_64
       Events:
@@ -141,7 +152,7 @@ Resources:
   LitPoolMatchingEngineLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: LitPoolMatchingEngine_sam
+      FunctionName: LitPoolMatchingEngine
       CodeUri: aws/src/lambdas/litPoolMatchingEngine/
       Handler: litPoolMatchingEngine.handler
       Layers:
@@ -152,12 +163,17 @@ Resources:
             ParameterName: "*"
         - SNSPublishMessagePolicy:
             TopicName: !Ref TopicName
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBusName
+      Environment:
+        Variables:
+          eventBusName: !Ref EventBus
       Architectures:
         - x86_64
   DarkPoolMatchingEngineLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: DarkPoolMatchingEngine_sam
+      FunctionName: DarkPoolMatchingEngine
       CodeUri: aws/src/lambdas/darkPoolMatchingEngine/
       Handler: darkPoolMatchingEngine.handler
       Layers:
@@ -168,12 +184,17 @@ Resources:
             ParameterName: "*"
         - SNSPublishMessagePolicy:
             TopicName: !Ref TopicName
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBusName
+      Environment:
+        Variables:
+          eventBusName: !Ref EventBus
       Architectures:
         - x86_64
   AvailableFundsRaiserLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: AvailableFundsRaiser_sam
+      FunctionName: AvailableFundsRaiser
       CodeUri: aws/src/lambdas/availableFundsRaiser/
       Handler: availableFundsRaiser.handler
       Layers:
@@ -194,7 +215,7 @@ Resources:
   PostTradeProcessorLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: PostTradeProcessor_sam
+      FunctionName: PostTradeProcessor
       CodeUri: aws/src/lambdas/postTradeProcessor/
       Handler: postTradeProcessor.handler
       Layers:
@@ -209,10 +230,13 @@ Resources:
             TopicName: !Ref TopicName
         - DynamoDBWritePolicy: 
             TableName: !Ref DDBTable
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBusName
       Environment:
         Variables:
           ddbTableName: !Ref DDBTable
           bucketName: !Ref TradesStorageS3BucketName
+          eventBusName: !Ref EventBus
       Architectures:
         - x86_64
         
@@ -257,6 +281,146 @@ Resources:
       FilterPolicy:
         PostTrade:
           - "True"
+
+  LitPoolsOrdersRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: LitPoolsOrders
+      Description: Forward orders coming from SmartOrderRouter or DarkPoolMatchingEngine to LitPoolMatchingEngine.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "SmartOrderRouter"
+          - "DarkPoolMatchingEngine"
+        detail-type:
+          - Orders
+        detail: 
+          PoolType: 
+            - "Lit"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "LitPoolMatchingEngineLambda"
+              - "Arn"
+          Id: "LitPoolMatchingEngineTarget"
+          InputPath: "$.detail.Orders"
+  DarkPoolsOrdersRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: DarkPoolsOrders
+      Description: Forward orders coming from SmartOrderRouter to DarkPoolMatchingEngine.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "SmartOrderRouter"
+        detail-type:
+          - Orders
+        detail: 
+          PoolType: 
+            - "Dark"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "DarkPoolMatchingEngineLambda"
+              - "Arn"
+          Id: "DarkPoolMatchingEngineTarget"
+          InputPath: "$.detail.Orders"
+  AvailableFundsRaiserRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: AvailableFundsRaiser
+      Description: Forward SmartOrderRouter orders with customers credit check failed to AvailableFundsRaiser.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "SmartOrderRouter"
+        detail-type:
+          - Orders
+        detail: 
+          InvalidOrders: 
+            - "CreditCheck"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "AvailableFundsRaiserLambda"
+              - "Arn"
+          Id: "AvailableFundsRaiserTarget"
+          InputPath: "$.detail.Orders"
+  PostTradeProcessorRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: PostTradeProcessor
+      Description: Post processes trades coming from Dark or Lit pool matching engines.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "LitPoolMatchingEngine"
+          - "DarkPoolMatchingEngine"
+        detail-type:
+          - Trades
+        detail: 
+          PostTrade: 
+            - "True"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "PostTradeProcessorLambda"
+              - "Arn"
+          Id: "PostTradeProcessorTarget"
+          InputPath: "$.detail.Trades"
+  # Provide permission for EventBridre to invoke the Lambda function
+  LitPoolMatchingEngineLambdaEventsInvokePermission: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "LitPoolMatchingEngineLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "LitPoolsOrdersRule"
+          - "Arn"
+  DarkPoolMatchingEngineLambdaEventsInvokePermission: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "DarkPoolMatchingEngineLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "DarkPoolsOrdersRule"
+          - "Arn"
+  AvailableFundsRaiserLambdaEventsInvokePermission: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "AvailableFundsRaiserLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "AvailableFundsRaiserRule"
+          - "Arn"
+  PostTradeProcessorLambdaEventsInvokePermission: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "PostTradeProcessorLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "PostTradeProcessorRule"
+          - "Arn"
   # Provide permission for SNS to invoke the Lambda function
   LitPoolMatchingEngineLambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
@@ -305,3 +469,6 @@ Outputs:
   SmartOrderRouterAPIDeploymentInfo:
     Value: !Ref SmartOrderRouterAPIDeployment
     Description: Smart Order Router API Deployment
+  EventBusInfo:
+    Value: !Ref EventBus
+    Description: Event Bus

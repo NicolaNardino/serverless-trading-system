@@ -1,11 +1,11 @@
-import { getDefaultIfUndefined, delay, publishToSns, getParameters, ddbDocClient, s3Client, eventBridgeClient } from '/opt/nodejs/src/utils.js';
+import { delay, publishToSns, getParameters, ddbDocClient, s3Client, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, PutObjectCommand, PutCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/s3-trades-storage', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
+const paramValues = await getParameters(['/darkpool/dev/bus-type']);
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
-const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
-const tradesStorageBucket = getDefaultIfUndefined(process.env.bucketName, paramValues.get('/darkpool/dev/s3-trades-storage'));
-const tableName = getDefaultIfUndefined(process.env.ddbTableName, "trades");
+const eventBusName = process.env.eventBusName;
+const tradesStorageBucket = process.env.bucketName;
+const tableName = process.env.ddbTableName;
 
 
 export async function handler(event) {

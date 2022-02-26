@@ -1,10 +1,10 @@
 import { getRandomArrayEntry, getRandom, publishToSns, getParameters, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/litpools', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
+const paramValues = await getParameters(['/darkpool/dev/litpools', '/darkpool/dev/bus-type']);
 const litPools = paramValues.get('/darkpool/dev/litpools').split(',');
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
-const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
+const eventBusName = process.env.eventBusName;
 
 export async function handler(event) {
     console.log(event);

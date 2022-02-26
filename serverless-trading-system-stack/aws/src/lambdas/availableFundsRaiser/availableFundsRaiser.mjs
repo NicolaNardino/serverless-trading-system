@@ -3,8 +3,7 @@ import { getDefaultIfUndefined, ddbDocClient, getParameters } from '/opt/nodejs/
 
 const paramValues = await getParameters(['/darkpool/dev/bus-type']);
 const busType = paramValues.get('/darkpool/dev/bus-type');
-
-const tableName = getDefaultIfUndefined(process.env.ddbTableName, "trades");
+const tableName = process.env.ddbTableName;
 
 export async function handler(event) {
     //console.log(JSON.stringify(event));

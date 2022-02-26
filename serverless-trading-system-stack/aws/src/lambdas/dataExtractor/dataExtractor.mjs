@@ -1,7 +1,7 @@
 import { GetCommand, QueryCommand } from '/opt/nodejs/src/dependencies.js';
-import { ddbDocClient, getDefaultIfUndefined } from '/opt/nodejs/src/utils.js';
+import { ddbDocClient } from '/opt/nodejs/src/utils.js';
 
-const tableName = getDefaultIfUndefined(process.env.ddbTableName, "trades");
+const tableName = process.env.ddbTableName;
 
 export async function handler(event) {
   console.log(event);

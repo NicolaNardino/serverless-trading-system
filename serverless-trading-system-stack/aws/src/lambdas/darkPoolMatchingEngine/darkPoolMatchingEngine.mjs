@@ -1,10 +1,10 @@
 import { getRandomArrayEntry, getRandom, getRandomBoolean, publishToSns, getParameters, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/darkpools', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
+const paramValues = await getParameters(['/darkpool/dev/darkpools', '/darkpool/dev/bus-type']);
 const darkPools = paramValues.get('/darkpool/dev/darkpools').split(',');
 const busType = paramValues.get('/darkpool/dev/bus-type');
-const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
+const eventBusName = process.env.eventBusName;
 
 export async function handler(event) {
     const tradesAndNotMatchedWithinDarkPool = [];
