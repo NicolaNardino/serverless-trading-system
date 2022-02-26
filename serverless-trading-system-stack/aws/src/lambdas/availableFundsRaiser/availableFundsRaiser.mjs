@@ -1,8 +1,8 @@
 import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
 import { getDefaultIfUndefined, ddbDocClient, getParameters } from '/opt/nodejs/src/utils.js';
 
-const paramValues = await getParameters(['/darkpool/dev/bus-type']);
-const busType = paramValues.get('/darkpool/dev/bus-type');
+const paramValues = await getParameters(['/trading-system/dev/bus-type']);
+const busType = paramValues.get('/trading-system/dev/bus-type');
 const tableName = process.env.ddbTableName;
 
 export async function handler(event) {

@@ -20,9 +20,38 @@ Parameters:
     Default: serverless-trades-storage
   EventBusName:
     Type: String
-    Default: trading-system-event-bus-1
+    Default: trading-system-event-bus
 
 Resources:
+  BusType:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /trading-system/dev/bus-type
+      Type: String
+      Value: EVENT-BRIDGE
+      Description: SNS or EVENT-BRIDGE
+  DarkPoolTickersList:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /trading-system/dev/tickers-list
+      Type: StringList
+      Value: FB,AMD,AMZN,APPL,NVDA,MO
+      Description: Orders with these tickers get sent to Dark Pools.
+  DarkPoolsList:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /trading-system/dev/dark-pools
+      Type: StringList
+      Value: INSTINET,POSIT,LIQUIDNET,CHI-X,CROSS-FINDER,SIGMA-X,GETCO
+      Description: List of Dark Pools
+  LitPoolsList:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /trading-system/dev/lit-pools
+      Type: StringList
+      Value: IEX,ISLAND,BATS,BAT.BYX,EDGX,EDGA,NASDAQ,NASDAQ.ARCA,EBS
+      Description: List of Lit Pools
+
   DataExtractorAPIDeployment:
     Type: AWS::Serverless::Api
     Properties:
@@ -51,8 +80,8 @@ Resources:
           KeyType: RANGE
       BillingMode: PROVISIONED
       ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 3
       StreamSpecification:
         StreamViewType: NEW_IMAGE
   

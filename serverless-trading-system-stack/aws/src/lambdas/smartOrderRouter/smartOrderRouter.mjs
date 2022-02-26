@@ -1,10 +1,9 @@
 import { publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = await getParameters(['/darkpool/dev/darkpool-tickers-list', '/darkpool/dev/bus-type']);
-const darkPoolTickers = paramValues.get('/darkpool/dev/darkpool-tickers-list').split(',');
-const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
-
+const paramValues = await getParameters(['/trading-system/dev/tickers-list', '/trading-system/dev/bus-type']);
+const darkPoolTickers = paramValues.get('/trading-system/dev/tickers-list').split(',');
+const busType = paramValues.get('/trading-system/dev/bus-type'); //SNS or EventBridge
 const tableName = process.env.ddbTableName;
 const ordersDispatcherTopicArn = process.env.ordersDispatcherTopicArn;
 const eventBusName = process.env.eventBusName;

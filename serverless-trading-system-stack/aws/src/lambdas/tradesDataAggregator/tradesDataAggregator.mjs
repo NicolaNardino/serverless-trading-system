@@ -1,7 +1,7 @@
-import { getDefaultIfUndefined, delay, ddbDocClient } from '/opt/nodejs/src/utils.js';
+import { delay, ddbDocClient } from '/opt/nodejs/src/utils.js';
 import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
 
-const tableName = getDefaultIfUndefined(process.env.ddbTableName, "trades");
+const tableName = process.env.ddbTableName;
 
 export async function handler(event) {
     //console.log(event);

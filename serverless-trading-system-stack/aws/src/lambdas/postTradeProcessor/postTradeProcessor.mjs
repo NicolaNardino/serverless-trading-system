@@ -1,8 +1,8 @@
 import { delay, publishToSns, getParameters, ddbDocClient, s3Client, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, PutObjectCommand, PutCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = await getParameters(['/darkpool/dev/bus-type']);
-const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
+const paramValues = await getParameters(['/trading-system/dev/bus-type']);
+const busType = paramValues.get('/trading-system/dev/bus-type'); //SNS or EventBridge
 const eventBusName = process.env.eventBusName;
 const tradesStorageBucket = process.env.bucketName;
 const tableName = process.env.ddbTableName;

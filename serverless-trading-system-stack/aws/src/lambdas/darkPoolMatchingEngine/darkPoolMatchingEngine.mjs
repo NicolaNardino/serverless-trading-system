@@ -1,9 +1,9 @@
 import { getRandomArrayEntry, getRandom, getRandomBoolean, publishToSns, getParameters, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = await getParameters(['/darkpool/dev/darkpools', '/darkpool/dev/bus-type']);
-const darkPools = paramValues.get('/darkpool/dev/darkpools').split(',');
-const busType = paramValues.get('/darkpool/dev/bus-type');
+const paramValues = await getParameters(['/trading-system/dev/dark-pools', '/trading-system/dev/bus-type']);
+const darkPools = paramValues.get('/trading-system/dev/dark-pools').split(',');
+const busType = paramValues.get('/trading-system/dev/bus-type');
 const eventBusName = process.env.eventBusName;
 
 export async function handler(event) {
