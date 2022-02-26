@@ -2,10 +2,11 @@ import { getDefaultIfUndefined, delay, publishToSns, getParameters, ddbDocClient
 import { randomUUID, PutObjectCommand, PutCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = await getParameters(['/darkpool/dev/order-dispatcher-topic-arn', '/darkpool/dev/s3-trades-storage', '/darkpool/dev/bus-type', '/darkpool/dev/event-bus-name']);
-const tradesStorage = paramValues.get('/darkpool/dev/s3-trades-storage');
 const busType = paramValues.get('/darkpool/dev/bus-type'); //SNS or EventBridge
 const eventBusName = paramValues.get('/darkpool/dev/event-bus-name');
+const tradesStorageBucket = getDefaultIfUndefined(process.env.bucketName, paramValues.get('/darkpool/dev/s3-trades-storage'));
 const tableName = getDefaultIfUndefined(process.env.ddbTableName, "trades");
+
 
 export async function handler(event) {
     //console.log(JSON.stringify(event));
@@ -13,7 +14,7 @@ export async function handler(event) {
     const fileName = buildS3FileName(today);
     switch (busType) {
         case 'EVENT-BRIDGE':
-            const result = await Promise.all([storeTradesInS3(tradesStorage, fileName, event), storeTradesInDynamoDB(event), eventBridgeClient.send(new PutEventsCommand({
+            const result = await Promise.all([storeTradesInS3(tradesStorageBucket, fileName, event), storeTradesInDynamoDB(event), eventBridgeClient.send(new PutEventsCommand({
                 Entries: [
                     {
                         Source: "PostTradeProcessor",
@@ -31,7 +32,7 @@ export async function handler(event) {
         case 'SNS':
             for (const record of event.Records) {
                 const trades = JSON.parse(record.Sns.Message);
-                await Promise.all([storeTradesInS3(tradesStorage, fileName, record.Sns.Message), storeTradesInDynamoDB(trades), publishToSns(event.Records[0].Sns.TopicArn, trades, {
+                await Promise.all([storeTradesInS3(tradesStorageBucket, fileName, record.Sns.Message), storeTradesInDynamoDB(trades), publishToSns(event.Records[0].Sns.TopicArn, trades, {
                     "TradesSettled": {
                         "DataType": "String",
                         "StringValue": "True"

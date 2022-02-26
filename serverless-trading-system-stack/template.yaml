@@ -15,6 +15,9 @@ Parameters:
   TopicName:
     Type: String
     Default: OrdersDispatcherTopic
+  TradesStorageS3BucketName:
+    Type: String
+    Default: serverless-trades-storage
 
 Resources:
   DataExtractorAPIDeployment:
@@ -50,7 +53,12 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_IMAGE
   
-  DDBStreamProcessingLambda:
+  TradesStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref TradesStorageS3BucketName    
+
+  TradesDataAggregatorLambda:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       FunctionName: TradesDataAggregator_sam
@@ -192,7 +200,9 @@ Resources:
       Layers:
         - !Ref SamTradingSystemLayer
       Runtime: nodejs14.x
-      Policies: 
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref TradesStorageS3BucketName
         - SSMParameterReadPolicy:
             ParameterName: "*"
         - SNSPublishMessagePolicy:
@@ -202,6 +212,7 @@ Resources:
       Environment:
         Variables:
           ddbTableName: !Ref DDBTable
+          bucketName: !Ref TradesStorageS3BucketName
       Architectures:
         - x86_64
         
@@ -288,3 +299,9 @@ Outputs:
   OrdersDispatcherTopicARN:
     Description: OrdersDispatcherTopic ARN
     Value: !Ref OrdersDispatcherTopic
+  TradesStorageBucketInfo:
+    Value: !Ref TradesStorageBucket
+    Description: S3 Bucket for trades storage
+  SmartOrderRouterAPIDeploymentInfo:
+    Value: !Ref SmartOrderRouterAPIDeployment
+    Description: Smart Order Router API Deployment
