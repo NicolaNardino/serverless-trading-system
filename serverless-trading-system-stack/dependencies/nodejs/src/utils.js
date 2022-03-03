@@ -40,6 +40,14 @@ async function getParameters(paramsArray) {
     return new Map((await ssmClient.send(new GetParametersCommand({ Names: paramsArray }))).Parameters.map(p => [p.Name, p.Value]));
 }
 
+function splitBy (number, n) {
+    const splitArray = new Array(Math.floor(number / n)).fill(n);
+    const remainder = number % n;
+    if (remainder > 0)
+        splitArray.push(remainder);
+    return splitArray;
+}
+
 export {
     getRandomInteger,
     getRandom,
@@ -49,6 +57,7 @@ export {
     publishToSns,
     getParameters,
     getDefaultIfUndefined,
+    splitBy,
     ddbDocClient,
     s3Client,
     eventBridgeClient

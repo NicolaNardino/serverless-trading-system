@@ -1,4 +1,4 @@
-import { publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/src/utils.js';
+import { splitBy, publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = await getParameters(['/trading-system/dev/tickers-list', '/trading-system/dev/bus-type']);
@@ -19,7 +19,6 @@ export async function handler(event) {
         const darkPoolOrders = splitBlockOrders(addOrderIdAndDate(orders.filter(order => darkPoolTickers.includes(order.ticker))), 1000);
         const litPoolOrders = splitBlockOrders(addOrderIdAndDate(orders.filter(order => !darkPoolTickers.includes(order.ticker))), 1000);
         await publishToSNSOrEventBridge(invalidOrders, darkPoolOrders, litPoolOrders);
-        
         return {
             statusCode: 200,
             body: JSON.stringify({
@@ -68,14 +67,6 @@ const addOrderIdAndDate = orders => {
     return orders.map(order => {
         return { ...order, orderId: randomUUID(), orderDate: new Date() };
     });
-};
-
-const splitBy = (number, n) => {
-    const splitArray = new Array(Math.floor(number / n)).fill(n);
-    const remainder = number % n;
-    if (remainder > 0)
-        splitArray.push(remainder);
-    return splitArray;
 };
 
 const splitBlockOrders = (orders, splitSize) => {
