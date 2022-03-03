@@ -4,12 +4,9 @@ It covers the front-to-back high-level architecture of a trading system, from wh
 
 It's a generalization of my previous project, [TradingMachine](https://github.com/NicolaNardino/TradingMachine).
 
-
 Main technologies used:
 - Node.js, Javascript ES6.
-- AWS: Lambda & Lambda Layers, API Gateway, EventBridge, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store.
-
-The gist of it is that all goes around a message bus: a pure pub/ sub serveless software architecture. 
+- AWS: Lambda & Lambda Layers, API Gateway, EventBridge, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store. Configuration and deployment of all resources by a SAM template.
 
 ## Software Architecture
 
@@ -119,6 +116,6 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 
 
 
-## In Progress
+## TODO
 
-- SAM infra set-up.
+- Configure local environment and add tests.
