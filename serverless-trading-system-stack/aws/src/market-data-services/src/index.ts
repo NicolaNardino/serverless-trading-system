@@ -3,14 +3,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { orderMatcherRouter } from './routers/orderMatcher';
-import errorMiddleware from './routers/errorMiddleware'
+import { uncaughtErrorHandler } from './middlewares/uncaughtErrorHandler'
 
 dotenv.config();
 
-if (!process.env.PORT)
-   process.exit(1);
-
-const PORT: number = parseInt(process.env.PORT, 10);
+const port = (!process.env.port ? 3244 : parseInt(process.env.port, 10));// 3244 is the default port.
 
 const app = express();
 
@@ -19,10 +16,10 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use("/matcher/order", orderMatcherRouter);
-//simple error handler middleware
-app.use(errorMiddleware);
+// error handler middlewares
+app.use(uncaughtErrorHandler);
 
-app.listen(PORT, () => {
-    console.log(`Listening on port ${PORT}`);
+
+app.listen(port, () => {
+    console.log(`Market data services listening on port ${port}`);
 });
-
