@@ -5,6 +5,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand  } from "@aws-sdk/lib-dynamodb";
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
 import { randomUUID } from 'crypto';
+import fetch from 'node-fetch';
 
 export {
     SNSClient, PublishCommand,
@@ -12,5 +13,6 @@ export {
     SSMClient, GetParameterCommand, GetParametersCommand,
     DynamoDBClient, DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand,
     EventBridgeClient, PutEventsCommand,
-    randomUUID
+    randomUUID,
+    fetch
 }

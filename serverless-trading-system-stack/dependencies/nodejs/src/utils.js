@@ -1,4 +1,4 @@
-import { PublishCommand, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient } from "./dependencies.js";
+import { PublishCommand, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient, fetch } from "./dependencies.js";
 
 const getRandomInteger = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -40,6 +40,14 @@ async function getParameters(paramsArray) {
     return new Map((await ssmClient.send(new GetParametersCommand({ Names: paramsArray }))).Parameters.map(p => [p.Name, p.Value]));
 }
 
+async function matchOrder(order, apiUrl) {
+    return await (await fetch(apiUrl, {
+        method: 'POST',
+        body: JSON.stringify(order),
+        headers: {'Content-Type': 'application/json'}
+    })).json();
+}
+
 function splitBy (number, n) {
     const splitArray = new Array(Math.floor(number / n)).fill(n);
     const remainder = number % n;
@@ -60,5 +68,6 @@ export {
     splitBy,
     ddbDocClient,
     s3Client,
-    eventBridgeClient
+    eventBridgeClient,
+    matchOrder
 }

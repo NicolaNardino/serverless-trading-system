@@ -5,6 +5,7 @@ const paramValues = await getParameters(['/trading-system/dev/dark-pools', '/tra
 const darkPools = paramValues.get('/trading-system/dev/dark-pools').split(',');
 const busType = paramValues.get('/trading-system/dev/bus-type');
 const eventBusName = process.env.eventBusName;
+//const fargateMarketDataServicesBaseURL = process.env.fargateMarketDataServicesBaseURL; TODO: call Fargate Market Data Services to match orders.
 
 export async function handler(event) {
     const tradesAndNotMatchedWithinDarkPool = [];

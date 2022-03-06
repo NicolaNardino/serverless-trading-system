@@ -21,6 +21,9 @@ Parameters:
   EventBusName:
     Type: String
     Default: trading-system-event-bus
+  FargateMarketDataServicesBaseURL:
+    Type: String
+    Default: xxx
 
 Resources:
   BusType:
@@ -51,7 +54,6 @@ Resources:
       Type: StringList
       Value: IEX,ISLAND,BATS,BAT.BYX,EDGX,EDGA,NASDAQ,NASDAQ.ARCA,EBS
       Description: List of Lit Pools
-
   DataExtractorAPIDeployment:
     Type: AWS::Serverless::Api
     Properties:
@@ -197,6 +199,7 @@ Resources:
       Environment:
         Variables:
           eventBusName: !Ref EventBus
+          fargateMarketDataServicesBaseURL: !Ref FargateMarketDataServicesBaseURL
       Architectures:
         - x86_64
   DarkPoolMatchingEngineLambda:
@@ -218,6 +221,7 @@ Resources:
       Environment:
         Variables:
           eventBusName: !Ref EventBus
+          fargateMarketDataServicesBaseURL: !Ref FargateMarketDataServicesBaseURL
       Architectures:
         - x86_64
   AvailableFundsRaiserLambda:

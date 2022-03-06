@@ -17,6 +17,7 @@
     "@aws-sdk/client-sns": "^3.47.1",
     "@aws-sdk/client-ssm": "^3.47.1",
     "@aws-sdk/lib-dynamodb": "^3.48.0",
-    "crypto": "^1.0.1"
+    "crypto": "^1.0.1",
+    "node-fetch": "^3.2.0"
   }
 }
