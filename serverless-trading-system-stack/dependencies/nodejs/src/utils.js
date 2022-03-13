@@ -12,7 +12,7 @@ const getDefaultIfUndefined = (value, defaultValue) => (value === undefined ? de
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const region = { region: 'us-east-2' };
+const region = { region: 'us-east-1' };
 const ddbDocClient = DynamoDBDocumentClient.from(new DynamoDBClient(region));
 const snsClient = new SNSClient(region);
 const ssmClient = new SSMClient(region);

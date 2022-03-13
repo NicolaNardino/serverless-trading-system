@@ -67,7 +67,7 @@ Resources:
 
   DDBTable:
     Type: AWS::DynamoDB::Table
-    #DeletionPolicy: Retain
+    DeletionPolicy: Delete
     Properties:
       TableName: !Ref DDBTableName
       AttributeDefinitions:
@@ -90,13 +90,15 @@ Resources:
   TradesStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref TradesStorageS3BucketName    
-  
+      BucketName: !Ref TradesStorageS3BucketName   
   EventBus:
     Type: AWS::Events::EventBus
     Properties:
       Name: !Ref EventBusName
-
+  OrdersDispatcherTopic:
+   Type: AWS::SNS::Topic
+   Properties:
+     TopicName: !Ref TopicName
   TradesDataAggregatorLambda:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -272,12 +274,18 @@ Resources:
           eventBusName: !Ref EventBus
       Architectures:
         - x86_64
-        
-  OrdersDispatcherTopic:
-   Type: AWS::SNS::Topic
-   Properties:
-     TopicName: !Ref TopicName
-
+  SamTradingSystemLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: sam-trading-system-lambda-layer
+            Description: Dependencies for sam-trading-system
+            ContentUri: dependencies/
+            CompatibleRuntimes:
+              - nodejs14.x
+            CompatibleArchitectures:
+              - x86_64
+            RetentionPolicy: Retain
+  
   OrdersDispatcherTopicLitPoolMatchingEngineLambdaSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -479,18 +487,6 @@ Resources:
       Action: 'lambda:InvokeFunction'
       FunctionName: !Ref PostTradeProcessorLambda
       Principal: sns.amazonaws.com
-
-  SamTradingSystemLayer:
-        Type: AWS::Serverless::LayerVersion
-        Properties:
-            LayerName: sam-trading-system-lambda-layer
-            Description: Dependencies for sam-trading-system
-            ContentUri: dependencies/
-            CompatibleRuntimes:
-              - nodejs14.x
-            CompatibleArchitectures:
-              - x86_64
-            RetentionPolicy: Retain
 
 Outputs:
   OrdersDispatcherTopicARN:
