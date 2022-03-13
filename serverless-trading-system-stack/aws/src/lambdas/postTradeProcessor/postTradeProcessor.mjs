@@ -7,7 +7,6 @@ const eventBusName = process.env.eventBusName;
 const tradesStorageBucket = process.env.bucketName;
 const tableName = process.env.ddbTableName;
 
-
 export async function handler(event) {
     //console.log(JSON.stringify(event));
     const today = new Date().toISOString().slice(0, 10);
@@ -55,6 +54,7 @@ async function storeTradesInS3(tradesStorage, fileName, trades) {
     await s3Client.send(new PutObjectCommand({
         Bucket: tradesStorage,
         Key: fileName,
+        Metadata: {tickers: [...new Set(trades.map(t => t.ticker))].join(','), exchanges: [...new Set(trades.map(t => t.exchange))].join(',')},
         Body: JSON.stringify(trades),
         ContentType: "application/json"
     }));
