@@ -1,18 +1,18 @@
-import { getRandomArrayEntry, getRandom, getRandomBoolean, publishToSns, getParameters, eventBridgeClient } from '/opt/nodejs/src/utils.js';
+import { matchOrder, getRandomArrayEntry, getRandom, getRandomBoolean, publishToSns, getParameters, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = await getParameters(['/trading-system/dev/dark-pools', '/trading-system/dev/bus-type']);
 const darkPools = paramValues.get('/trading-system/dev/dark-pools').split(',');
 const busType = paramValues.get('/trading-system/dev/bus-type');
 const eventBusName = process.env.eventBusName;
-//const fargateMarketDataServicesBaseURL = process.env.fargateMarketDataServicesBaseURL; TODO: call Fargate Market Data Services to match orders.
+const marketDataServiceURL = process.env.fargateMarketDataServicesBaseURL;
 
 export async function handler(event) {
     const tradesAndNotMatchedWithinDarkPool = [];
     switch (busType) {
         case 'EVENT-BRIDGE':
             //console.log(event);
-            tradesAndNotMatchedWithinDarkPool.push(...turnOrdersIntoTradesOrLitPoolsOrders(event));
+            tradesAndNotMatchedWithinDarkPool.push(...await turnOrdersIntoTradesOrLitPoolsOrders(event));
             const params = {
                 Entries: [
                     {
@@ -41,7 +41,7 @@ export async function handler(event) {
             break;
         case 'SNS':
             const topicArn = event.Records[0].Sns.TopicArn;
-            event.Records.forEach(record => tradesAndNotMatchedWithinDarkPool.push(...turnOrdersIntoTradesOrLitPoolsOrders(JSON.parse(record.Sns.Message))));
+            await Promise.all(event.Records.map(async record => tradesAndNotMatchedWithinDarkPool.push(...await turnOrdersIntoTradesOrLitPoolsOrders(JSON.parse(record.Sns.Message)))));
             await Promise.all([await publishToSns(topicArn, tradesAndNotMatchedWithinDarkPool.filter(t => t.exchangeType === "DarkPool"), {
                 "PostTrade": {
                     "DataType": "String",
@@ -69,8 +69,8 @@ export async function handler(event) {
 }
 
 //randomly match order within the DarkPool. If not matched, forward it to LitPools.
-function turnOrdersIntoTradesOrLitPoolsOrders(orders) {
-    return orders.map(order => {
+async function turnOrdersIntoTradesOrLitPoolsOrders(orders) {
+    return Promise.all(orders.map(async order => {
         if (getRandomBoolean())
             return {
                 ...order,
@@ -79,12 +79,12 @@ function turnOrdersIntoTradesOrLitPoolsOrders(orders) {
                 exchangeType: "DarkPool",
                 tradeDate: new Date(),
                 fee: getRandom(0, 1).toFixed(2),
-                ...(order.type === "Market" ? { price: getRandom(100, 200).toFixed(2) } : {})
+                ...(order.type === "Market" ? { price: (marketDataServiceURL !== 'xxx' ? (await matchOrder(order, marketDataServiceURL)).matchedPrice : getRandom(100, 200).toFixed(2)) } : {})
             };
         else
             return {
                 ...order,
                 notMatchedInDarkPool: "True"
             };
-    });
+    }));
 }

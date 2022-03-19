@@ -1,10 +1,11 @@
-import { getRandomArrayEntry, getRandom, publishToSns, getParameters, eventBridgeClient } from '/opt/nodejs/src/utils.js';
+import { matchOrder, getRandomArrayEntry, getRandom, publishToSns, getParameters, eventBridgeClient } from '/opt/nodejs/src/utils.js';
 import { randomUUID, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
 const paramValues = await getParameters(['/trading-system/dev/lit-pools', '/trading-system/dev/bus-type']);
 const litPools = paramValues.get('/trading-system/dev/lit-pools').split(',');
 const busType = paramValues.get('/trading-system/dev/bus-type'); //SNS or EventBridge
 const eventBusName = process.env.eventBusName;
+const marketDataServiceURL = process.env.fargateMarketDataServicesBaseURL;
 
 export async function handler(event) {
     console.log(event);
@@ -12,7 +13,7 @@ export async function handler(event) {
     switch (busType) {
         case 'EVENT-BRIDGE':
             //event contains exactly the orders, due to a translation done in the EventBridge rule use to target this lambda: $.detail.Orders.
-            trades.push(...turnOrdersIntoTrades(event));
+            trades.push(... await turnOrdersIntoTrades(event));
             const params = {
                 Entries: [
                     {
@@ -30,7 +31,7 @@ export async function handler(event) {
             console.log("Event sent to EventBridge with result:\n", result);
             break;
         case 'SNS':
-            event.Records.forEach(record => trades.push(...turnOrdersIntoTrades(JSON.parse(record.Sns.Message))));
+            await Promise.all(event.Records.map(async record => trades.push(...await turnOrdersIntoTrades(JSON.parse(record.Sns.Message)))));
             await publishToSns(event.Records[0].Sns.TopicArn, trades, {
                 "PostTrade": {
                     "DataType": "String",
@@ -52,8 +53,8 @@ export async function handler(event) {
     };
 }
 
-function turnOrdersIntoTrades(orders) {
-    return orders.map(order => {
+async function turnOrdersIntoTrades(orders) {
+    return Promise.all(orders.map(async order => {
         const randomExchange = getRandomArrayEntry(litPools);
         const randomFee = (randomExchange == "EBS" ? getRandom(1, 10).toFixed(2) : getRandom(0, 1).toFixed(2)); //yes, EBS (CH) is way more expensive than US exchanges.
         return {
@@ -63,7 +64,7 @@ function turnOrdersIntoTrades(orders) {
             exchangeType: "LitPool",
             tradeDate: new Date(),
             fee: randomFee,
-            ...(order.type === "Market" ? { price: getRandom(100, 200).toFixed(2) } : {}),
+            ...(order.type === "Market" ? { price: (marketDataServiceURL !== 'xxx' ? (await matchOrder(order, marketDataServiceURL)).matchedPrice : getRandom(100, 200).toFixed(2)) } : {}),
         };
-    });
+    }));
 }
