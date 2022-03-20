@@ -274,6 +274,23 @@ Resources:
           eventBusName: !Ref EventBus
       Architectures:
         - x86_64
+  TradesStorageAnalyzerLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: TradesStorageAnalyzer
+      CodeUri: aws/dist/lambdas/tradesStorageAnalyzer/
+      Handler: tradesStorageAnalyzer.handler
+      Runtime: nodejs14.x
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref TradesStorageS3BucketName
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref TradesStorageBucket
+            Events: s3:ObjectCreated:*
+  
   SamTradingSystemLayer:
         Type: AWS::Serverless::LayerVersion
         Properties:
