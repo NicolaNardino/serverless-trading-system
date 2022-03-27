@@ -6,8 +6,12 @@
     "preserveConstEnums": true,
     "rootDir": "src",
     "outDir": "dist/",
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": "./",
+    "paths": {
+      "/opt/nodejs/*": ["../dependencies/nodejs/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]
-  }
+}

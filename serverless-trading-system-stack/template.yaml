@@ -280,6 +280,8 @@ Resources:
       FunctionName: TradesStorageAnalyzer
       CodeUri: aws/dist/lambdas/tradesStorageAnalyzer/
       Handler: tradesStorageAnalyzer.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
       Runtime: nodejs14.x
       Policies:
         - S3ReadPolicy:
