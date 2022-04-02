@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
+    "module": "ES2020",
     "target": "es2020",
     "noImplicitAny": true,
     "preserveConstEnums": true,
@@ -8,10 +8,12 @@
     "outDir": "dist/",
     "sourceMap": true,
     "baseUrl": "./",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
     "paths": {
       "/opt/nodejs/*": ["../dependencies/nodejs/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/**/package.json"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
