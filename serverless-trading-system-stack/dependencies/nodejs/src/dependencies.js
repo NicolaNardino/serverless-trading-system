@@ -1,5 +1,5 @@
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
-import { S3Client, PutObjectCommand, ListObjectsCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, ListObjectsCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { SSMClient, GetParameterCommand, GetParametersCommand } from "@aws-sdk/client-ssm";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"; 
 import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand  } from "@aws-sdk/lib-dynamodb";
@@ -9,7 +9,7 @@ import fetch from 'node-fetch';
 
 export {
     SNSClient, PublishCommand,
-    S3Client, PutObjectCommand, ListObjectsCommand,
+    S3Client, PutObjectCommand, ListObjectsCommand, HeadObjectCommand,
     SSMClient, GetParameterCommand, GetParametersCommand,
     DynamoDBClient, DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand,
     EventBridgeClient, PutEventsCommand,
