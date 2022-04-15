@@ -12,6 +12,9 @@ Parameters:
   DDBTableName:
     Type: String
     Default: TradesStore
+  MarketDataTableName:
+    Type: String
+    Default: MarketData
   TopicName:
     Type: String
     Default: OrdersDispatcherTopic
@@ -54,6 +57,13 @@ Resources:
       Type: StringList
       Value: IEX,ISLAND,BATS,BAT.BYX,EDGX,EDGA,NASDAQ,NASDAQ.ARCA,EBS
       Description: List of Lit Pools
+  MarketDataApiKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /trading-system/dev/market-data-api-key
+      Type: String
+      Value: xxx
+      Description: Market Data Api Key
   DataExtractorAPIDeployment:
     Type: AWS::Serverless::Api
     Properties:
@@ -87,6 +97,26 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_IMAGE
   
+  MarketDataTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    Properties:
+      TableName: !Ref MarketDataTableName
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
   TradesStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -160,8 +190,10 @@ Resources:
         - !Ref SamTradingSystemLayer
       Runtime: nodejs14.x
       Policies: 
-        - DynamoDBReadPolicy: 
+        - DynamoDBReadPolicy:
             TableName: !Ref DDBTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MarketDataTable
         - SSMParameterReadPolicy:
             ParameterName: "*"
         - SNSPublishMessagePolicy:
@@ -171,6 +203,7 @@ Resources:
       Environment:
         Variables:
           ddbTableName: !Ref DDBTable
+          marketDataTableName: !Ref MarketDataTable
           ordersDispatcherTopicArn: !Ref OrdersDispatcherTopic
           eventBusName: !Ref EventBusName
       Architectures:
@@ -292,7 +325,31 @@ Resources:
           Properties:
             Bucket: !Ref TradesStorageBucket
             Events: s3:ObjectCreated:*
+      Architectures:
+        - x86_64
   
+  MarketDataManagerLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: MarketDataManager
+      CodeUri: aws/dist/lambdas/marketDataManager/
+      Handler: marketDataManager.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref TradesStorageS3BucketName
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+      Environment:
+        Variables:
+          bucketName: !Ref TradesStorageS3BucketName
+          eventBusName: !Ref EventBus
+          marketDataTableName: !Ref MarketDataTable
+      Architectures:
+        - x86_64
+
   SamTradingSystemLayer:
         Type: AWS::Serverless::LayerVersion
         Properties:
@@ -436,6 +493,26 @@ Resources:
               - "Arn"
           Id: "PostTradeProcessorTarget"
           InputPath: "$.detail.Trades"
+  MarketDataManagerRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: MarketDataManager
+      Description: Receives market data requests, call the market data provider and store the outcome in DynamoDB and S3.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "SmartOrderRouter"
+        detail-type:
+          - MarketData
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "MarketDataManagerLambda"
+              - "Arn"
+          Id: "MarketDataManagerTarget"
+
   # Provide permission for EventBridre to invoke the Lambda function
   LitPoolMatchingEngineLambdaEventsInvokePermission: 
     Type: AWS::Lambda::Permission
@@ -481,6 +558,18 @@ Resources:
         Fn::GetAtt: 
           - "PostTradeProcessorRule"
           - "Arn"
+  MarketDataManagerLambdaEventsInvokePermission: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "MarketDataManagerLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "MarketDataManagerRule"
+          - "Arn"
+      
   # Provide permission for SNS to invoke the Lambda function
   LitPoolMatchingEngineLambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'

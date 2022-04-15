@@ -1,10 +1,12 @@
 import { splitBy, publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/src/utils.js';
-import { randomUUID, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
+import { randomUUID, fetch, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
 
-const paramValues = await getParameters(['/trading-system/dev/tickers-list', '/trading-system/dev/bus-type']);
+const paramValues = await getParameters(['/trading-system/dev/tickers-list', '/trading-system/dev/bus-type', '/trading-system/dev/market-data-api-key']);
 const darkPoolTickers = paramValues.get('/trading-system/dev/tickers-list').split(',');
 const busType = paramValues.get('/trading-system/dev/bus-type'); //SNS or EventBridge
+const marketDataApiKey = paramValues.get('/trading-system/dev/market-data-api-key');
 const tableName = process.env.ddbTableName;
+const marketDataTableName = process.env.marketDataTableName;
 const ordersDispatcherTopicArn = process.env.ordersDispatcherTopicArn;
 const eventBusName = process.env.eventBusName;
 
@@ -13,6 +15,7 @@ export async function handler(event) {
         let orders = [];
         if (event.body)
             orders = JSON.parse(event.body);
+        await requestMarketData(orders);
         const checkedOrders = await creditCheck(orders, ddbDocClient);
         orders = checkedOrders.validOrders;
         const invalidOrders = checkedOrders.invalidOrders;
@@ -36,6 +39,44 @@ export async function handler(event) {
     }
 }
 
+async function getMarketData() {
+    const mods = 'summaryDetail,assetProfile,fundProfile,financialData,defaultKeyStatistics,calendarEvents,incomeStatementHistory,incomeStatementHistoryQuarterly,cashflowStatementHistory,balanceSheetHistory,earnings,earningsHistory,insiderHolders,cashflowStatementHistory, cashflowStatementHistoryQuarterly,insiderTransactions,secFilings,indexTrend,sectorTrend,earningsTrend,netSharePurchaseActivity,upgradeDowngradeHistory,institutionOwnership,recommendationTrend,balanceSheetHistory,balanceSheetHistoryQuarterly,fundOwnership,majorDirectHolders, majorHoldersBreakdown, price, quoteType, esgScore';
+    const result = await fetch('https://yfapi.net/v11/finance/quoteSummary/AAPL?'+(new URLSearchParams({modules: mods})).toString(), {
+           method: 'GET',
+           headers: {'Content-Type': 'application/json',
+                   'x-api-key': marketDataApiKey}
+       });
+    return await result.json();
+   }
+
+const requestMarketData = async(orders) => {
+    const distinctTickers = [...new Set(orders.map(o => o.ticker))];
+    const tickersWithNoMarketData = await Promise.all(distinctTickers.filter(async ticker => {
+        const params = {
+            TableName: marketDataTableName,
+            Key: {
+                PK: "TICKER#" + ticker,
+                SK: "TICKER#" + ticker
+            }
+        };
+        const item = (await ddbDocClient.send(new GetCommand(params))).Item;
+        return (item == null ? true : false);
+    }));
+    await eventBridgeClient.send(new PutEventsCommand({
+        Entries: [
+            {
+                Source: "SmartOrderRouter",
+                EventBusName: eventBusName,
+                DetailType: "MarketData",
+                Time: new Date(),
+                Detail: JSON.stringify({
+                    tickers: tickersWithNoMarketData
+                })
+            }]
+    }));
+    console.log('Sent market data request for ', tickersWithNoMarketData)
+}
+
 const creditCheck = async (orders, ddbDocClient) => {
     const validOrders = [];
     const invalidOrders = [];
@@ -52,7 +93,6 @@ const creditCheck = async (orders, ddbDocClient) => {
             ProjectionExpression: "RemainingFunds"
         };
         const { RemainingFunds: rm } = (await ddbDocClient.send(new GetCommand(params))).Item;
-        //console.log("rm", rm, "potential", potentialTradeValue, "price", orderPrice, "quantity", order.quantity);
         if (rm > potentialTradeValue) //for the sake of simplification, exclude the transaction fee.
             validOrders.push(order);
         else {
