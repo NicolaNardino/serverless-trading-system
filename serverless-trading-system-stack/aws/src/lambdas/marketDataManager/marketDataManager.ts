@@ -32,25 +32,7 @@ async function getAndStoreMarketData(tickers: Array<string>) {
     }));
     console.log("Market data for ", ticker, "stored in S3 bucket ", tradesStorageBucket);
     await storeMarketDataInDyanmoDB(ticker, marketData, marketDataS3Key);
-    console.log("Market data for ", ticker, "stored in DynamoDB table", marketDataTableName);
   }));
-}
-
-async function getAndStoreTickerMarketData(ticker: string) : Promise<void> {
-  const result = await fetch(marketDataApiBaseURL+'quoteSummary/' + ticker + '?' + (new URLSearchParams({ modules: quoteSummaryModules })).toString(), {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': marketDataApiKey }
-  });
-  const marketDataS3Key = 'marketData/' + ticker + '/quoteSummary';
-  const marketData = await result.json();
-  await s3Client.send(new PutObjectCommand({
-    Bucket: tradesStorageBucket,
-    Key: marketDataS3Key,
-    Body: JSON.stringify(marketData),
-    ContentType: "application/json"
-  }));
-  console.log("Market data for ", ticker, "stored in S3 bucket ", tradesStorageBucket);
-  await storeMarketDataInDyanmoDB(ticker, marketData, marketDataS3Key);
 }
 
 async function storeMarketDataInDyanmoDB(ticker: string, marketData: any, marketDataS3Key: string) {
