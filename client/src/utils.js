@@ -3,7 +3,7 @@ import { PutCommand } from '../../serverless-trading-system-stack/dependencies/n
 
 function buildRandomOrders(nrOrders) {
     const customers = ['000001', '000002', '000003', '000004', '000005', '000006', '000007', '000008', '000009', '0000010', '0000011', '0000012'];
-    const tickers = ['FB', 'AMD', 'AMZN', 'APPL', 'GOOG', 'NFLX', 'F', 'T', 'MO', 'PFE', 'COIN', 'MRNA', 'ORCL', 'TSLA', 'NVDA', 'MSFT', 'UBSN', 'CSGN'];
+    const tickers = ['FB', 'AMD', 'AMZN', 'APPL', 'GOOG', 'NFLX', 'F', 'T', 'MO', 'PFE', 'COIN', 'MRNA', 'ORCL', 'TSLA', 'NVDA', 'MSFT', 'UBSN', 'CSGN', 'HOLN', 'EOG', 'PBR', 'RBLX', 'CDEV','BABA', 'SPY', 'VTI','VOO','ADBE'];
     const directions = ['Buy', 'Sell'];
     const types = ['Market', 'Limit'];
     return [...Array(nrOrders)].map((_, i) => {

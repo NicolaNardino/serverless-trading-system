@@ -1,4 +1,4 @@
-import { PublishCommand, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient, fetch } from "./dependencies.js";
+import { PublishCommand, GetParameterCommand, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient, fetch } from "./dependencies.js";
 
 const getRandomInteger = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -19,7 +19,6 @@ const ssmClient = new SSMClient(region);
 const s3Client = new S3Client(region);
 const eventBridgeClient = new EventBridgeClient(region);
 
-
 async function publishToSns(topicArn, message, messageAttributes) {
     console.log('About to publish message ', JSON.stringify(message), ' to the topic ', topicArn);
     const requestParams = {
@@ -34,6 +33,10 @@ async function publishToSns(topicArn, message, messageAttributes) {
     console.log('SNS reply: ', JSON.stringify(messageAcknowledge));
 
     return messageAcknowledge;
+}
+
+async function getParameter(param) {
+    return (await (ssmClient.send(new GetParameterCommand({ Name: param })))).Parameter?.Value;
 }
 
 async function getParameters(paramsArray) {
@@ -63,7 +66,7 @@ export {
     getRandomArrayEntry,
     delay,
     publishToSns,
-    getParameters,
+    getParameters, getParameter,
     getDefaultIfUndefined,
     splitBy,
     ddbDocClient,

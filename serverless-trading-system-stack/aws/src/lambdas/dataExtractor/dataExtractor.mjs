@@ -1,7 +1,7 @@
 import { GetCommand, QueryCommand } from '/opt/nodejs/src/dependencies.js';
 import { ddbDocClient } from '/opt/nodejs/src/utils.js';
 
-const tableName = process.env.ddbTableName;
+const tableName = process.env.tradesStoreTableName;
 
 export async function handler(event) {
   console.log(event);

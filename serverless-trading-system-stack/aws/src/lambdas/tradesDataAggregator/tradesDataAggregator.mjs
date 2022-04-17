@@ -1,7 +1,7 @@
 import { delay, ddbDocClient } from '/opt/nodejs/src/utils.js';
 import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
 
-const tableName = process.env.ddbTableName;
+const tableName = process.env.tradesStoreTableName;
 
 export async function handler(event) {
     //console.log(event);
@@ -41,6 +41,33 @@ export async function handler(event) {
                     ExpressionAttributeNames: {
                         '#NrTrades': 'NrTrades',
                         '#TotalCommissionPaid': 'TotalCommissionPaid',
+                        '#TotalAmountInvested': 'TotalAmountInvested',
+                        '#RemainingFunds': 'RemainingFunds',
+                        '#Updated': 'Updated'
+                    },
+                    ExpressionAttributeValues: {
+                        ':Count': 1,
+                        ':Fee': parseFloat(record.dynamodb.NewImage.Fee.S),
+                        ':AmountInvested': parseFloat(record.dynamodb.NewImage.Price.S) * parseFloat(record.dynamodb.NewImage.Quantity.N),
+                        ':Start': 0,
+                        ':Now': Date.now()
+                    },
+                    UpdateExpression: 'SET #NrTrades = if_not_exists(#NrTrades, :Start) + :Count, #TotalCommissionPaid = if_not_exists(#TotalCommissionPaid, :Start) + :Fee, ' +
+                        '#TotalAmountInvested = if_not_exists(#TotalAmountInvested, :Start) + :AmountInvested, #RemainingFunds = #RemainingFunds - :AmountInvested, #Updated = :Now'
+                };
+                await ddbDocClient.send(new UpdateCommand(customerUpdateExpr));
+                //console.log('Updated key: '+JSON.stringify(customerUpdateExpr.Key));
+                await delay(200);
+
+                const pnlExpr = {
+                    TableName: tableName,
+                    Key: {
+                        PK: customer,
+                        SK: "TICKER#"+record.dynamodb.NewImage.Ticker.S
+                    },
+                    ExpressionAttributeNames: {
+                        '#NrTrades': 'NrTrades',
+                        '#OpenQuanit': 'TotalCommissionPaid',
                         '#TotalAmountInvested': 'TotalAmountInvested',
                         '#RemainingFunds': 'RemainingFunds',
                         '#Updated': 'Updated'

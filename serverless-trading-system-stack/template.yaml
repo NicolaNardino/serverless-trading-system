@@ -9,7 +9,7 @@ Globals:
     Timeout: 3
 
 Parameters:
-  DDBTableName:
+  tradesStoreTableName:
     Type: String
     Default: TradesStore
   MarketDataTableName:
@@ -21,6 +21,9 @@ Parameters:
   TradesStorageS3BucketName:
     Type: String
     Default: serverless-trades-storage
+  MarketDataS3BucketName:
+    Type: String
+    Default: serverless-market-data
   EventBusName:
     Type: String
     Default: trading-system-event-bus
@@ -39,9 +42,9 @@ Resources:
   DarkPoolTickersList:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /trading-system/dev/tickers-list
+      Name: /trading-system/dev/dark-pool-tickers-list
       Type: StringList
-      Value: FB,AMD,AMZN,APPL,NVDA,MO
+      Value: FB,AMD,AMZN,APPL,NVDA,MO,GOOG,F,T,VTI
       Description: Orders with these tickers get sent to Dark Pools.
   DarkPoolsList:
     Type: AWS::SSM::Parameter
@@ -57,6 +60,13 @@ Resources:
       Type: StringList
       Value: IEX,ISLAND,BATS,BAT.BYX,EDGX,EDGA,NASDAQ,NASDAQ.ARCA,EBS
       Description: List of Lit Pools
+  MarketDataApiBaseURL:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /trading-system/dev/market-data-api-base-url
+      Type: String
+      Value: https://yfapi.net/v11/finance/
+      Description: Market Data Api Base URL
   MarketDataApiKey:
     Type: AWS::SSM::Parameter
     Properties:
@@ -79,7 +89,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
     Properties:
-      TableName: !Ref DDBTableName
+      TableName: !Ref tradesStoreTableName
       AttributeDefinitions:
         - AttributeName: PK
           AttributeType: S
@@ -120,7 +130,11 @@ Resources:
   TradesStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref TradesStorageS3BucketName   
+      BucketName: !Ref TradesStorageS3BucketName
+  MarketDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref MarketDataS3BucketName
   EventBus:
     Type: AWS::Events::EventBus
     Properties:
@@ -146,7 +160,7 @@ Resources:
             TableName: !Ref DDBTable
       Environment:
         Variables:
-          ddbTableName: !Ref DDBTable
+          tradesStoreTableName: !Ref DDBTable
       Architectures:
         - x86_64
       Events:
@@ -170,7 +184,7 @@ Resources:
             TableName: !Ref DDBTable
       Environment:
         Variables:
-          ddbTableName: !Ref DDBTable
+          tradesStoreTableName: !Ref DDBTable
       Architectures:
         - x86_64
       Events:
@@ -202,7 +216,7 @@ Resources:
             EventBusName: !Ref EventBusName
       Environment:
         Variables:
-          ddbTableName: !Ref DDBTable
+          tradesStoreTableName: !Ref DDBTable
           marketDataTableName: !Ref MarketDataTable
           ordersDispatcherTopicArn: !Ref OrdersDispatcherTopic
           eventBusName: !Ref EventBusName
@@ -277,7 +291,7 @@ Resources:
             TableName: !Ref DDBTable
       Environment:
         Variables:
-          ddbTableName: !Ref DDBTable
+          tradesStoreTableName: !Ref DDBTable
       Architectures:
         - x86_64
   PostTradeProcessorLambda:
@@ -302,7 +316,7 @@ Resources:
             EventBusName: !Ref EventBusName
       Environment:
         Variables:
-          ddbTableName: !Ref DDBTable
+          tradesStoreTableName: !Ref DDBTable
           bucketName: !Ref TradesStorageS3BucketName
           eventBusName: !Ref EventBus
       Architectures:
@@ -339,12 +353,14 @@ Resources:
       Runtime: nodejs14.x
       Policies:
         - S3WritePolicy:
-            BucketName: !Ref TradesStorageS3BucketName
+            BucketName: !Ref MarketDataBucket
         - SSMParameterReadPolicy:
             ParameterName: "*"
+        - DynamoDBWritePolicy: 
+            TableName: !Ref MarketDataTable
       Environment:
         Variables:
-          bucketName: !Ref TradesStorageS3BucketName
+          bucketName: !Ref MarketDataS3BucketName
           eventBusName: !Ref EventBus
           marketDataTableName: !Ref MarketDataTable
       Architectures:

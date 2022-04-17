@@ -5,7 +5,7 @@ const paramValues = await getParameters(['/trading-system/dev/bus-type']);
 const busType = paramValues.get('/trading-system/dev/bus-type'); //SNS or EventBridge
 const eventBusName = process.env.eventBusName;
 const tradesStorageBucket = process.env.bucketName;
-const tableName = process.env.ddbTableName;
+const tableName = process.env.tradesStoreTableName;
 
 export async function handler(event) {
     //console.log(JSON.stringify(event));
