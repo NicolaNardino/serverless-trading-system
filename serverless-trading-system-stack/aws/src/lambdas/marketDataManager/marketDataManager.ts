@@ -18,7 +18,7 @@ export const handler = async (event: EventBridgeEvent<string, MarketDataDetail>)
 
 async function getAndStoreMarketData(tickers: Array<string>) {
   await Promise.all(tickers.map(async (ticker) => {
-    const result = await fetch(marketDataApiBaseURL+'quoteSummary/' + ticker + '?' + (new URLSearchParams({ modules: quoteSummaryModules })).toString(), {
+    const result = await fetch(marketDataApiBaseURL + 'quoteSummary/' + ticker + '?' + (new URLSearchParams({ modules: quoteSummaryModules })).toString(), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', 'x-api-key': marketDataApiKey }
     });
@@ -36,27 +36,40 @@ async function getAndStoreMarketData(tickers: Array<string>) {
 }
 
 async function storeMarketDataInDyanmoDB(ticker: string, marketData: any, marketDataS3Key: string) {
-  const defaultKeyStatistics = marketData.quoteSummary.result[0].defaultKeyStatistics;
-  const params = {
-    TableName: marketDataTableName,
-    Item: {
+  try {
+    const defaultKeyStatistics = marketData.quoteSummary.result[0].defaultKeyStatistics;
+    const summaryDetail = marketData.quoteSummary.result[0].summaryDetail;
+    const params = {
+      TableName: marketDataTableName,
+      Item: {
         "PK": "TICKER#" + ticker,
         "SK": "SUMMARY#" + ticker,
         "S3Key": marketDataS3Key,
-        "EnterpriseValue": defaultKeyStatistics.enterpriseValue.raw,
-        "ForwardPE": defaultKeyStatistics.forwardPE.raw,
-        "ProfitMargins": defaultKeyStatistics.profitMargins.raw,
-        "Beta": defaultKeyStatistics.beta.raw,
-        "EarningsQuarterlyGrowth": defaultKeyStatistics.earningsQuarterlyGrowth.raw,
-        "TrailingEps": defaultKeyStatistics.trailingEps.raw,
-        "ForwardEps": defaultKeyStatistics.forwardEps.raw,
-        "lastDividendValue": defaultKeyStatistics.lastDividendValue.raw,
-        "lastDividendDate": defaultKeyStatistics.lastDividendDate,
+        "EnterpriseValue": emptyIfUndefined(defaultKeyStatistics.enterpriseValue?.raw),
+        "ForwardPE": emptyIfUndefined(defaultKeyStatistics.forwardPE?.raw),
+        "ProfitMargins": emptyIfUndefined(defaultKeyStatistics.profitMargins?.raw),
+        "Beta": emptyIfUndefined(defaultKeyStatistics.beta?.raw),
+        "EarningsQuarterlyGrowth": emptyIfUndefined(defaultKeyStatistics.earningsQuarterlyGrowth?.raw),
+        "TrailingEps": emptyIfUndefined(defaultKeyStatistics.trailingEps?.raw),
+        "ForwardEps": emptyIfUndefined(defaultKeyStatistics.forwardEps?.raw),
+        "LastDividendValue": emptyIfUndefined(defaultKeyStatistics.lastDividendValue?.raw),
+        "LastDividendDate": emptyIfUndefined(defaultKeyStatistics.lastDividendDate),
+        "DividendYield": emptyIfUndefined(summaryDetail.dividendYield.raw),
+        "PayoutRatio": emptyIfUndefined(summaryDetail.payoutRatio.raw),
         "Updated": Date.now()
       }
-  };
-  await ddbDocClient.send(new PutCommand(params));
-  console.log("Market data for ", ticker, "stored in DynamoDB table", marketDataTableName);
+    };
+    await ddbDocClient.send(new PutCommand(params));
+  }
+  catch (e) {
+    console.log(e);
+  }
+}
+
+function emptyIfUndefined(item: any) {
+  if (item === undefined)
+    return {};
+  return item;
 }
 
 interface MarketDataDetail {

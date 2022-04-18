@@ -125,7 +125,7 @@ Resources:
       BillingMode: PROVISIONED
       ProvisionedThroughput:
         ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+        WriteCapacityUnits: 12
 
   TradesStorageBucket:
     Type: AWS::S3::Bucket

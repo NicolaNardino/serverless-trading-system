@@ -40,7 +40,7 @@ export async function handler(event) {
 
 const requestMarketData = async (orders) => {
     const distinctTickers = [...new Set(orders.map(o => o.ticker))];
-    const tickersWithNoMarketData = await Promise.all(distinctTickers.filter(async ticker => {
+    const step1TickersWithNoMarketData = await Promise.all(distinctTickers.map(async ticker => {
         const params = {
             TableName: marketDataTableName,
             Key: {
@@ -51,6 +51,7 @@ const requestMarketData = async (orders) => {
         const item = (await ddbDocClient.send(new GetCommand(params))).Item;
         return (item === undefined ? true : false);
     }));
+    const tickersWithNoMarketData = distinctTickers.filter((_v, index) => step1TickersWithNoMarketData[index]);
     await eventBridgeClient.send(new PutEventsCommand({
         Entries: [
             {
