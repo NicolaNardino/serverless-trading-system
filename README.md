@@ -5,16 +5,17 @@ It covers the front-to-back high-level architecture of a trading system, from wh
 It's a generalization of my previous project, [TradingMachine](https://github.com/NicolaNardino/TradingMachine).
 
 Main technologies used:
-- Node.js, Javascript ES6.
+- Node.js, TypeScript, Javascript ES6.
 - AWS: Lambda & Lambda Layers, API Gateway, EventBridge, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store. Configuration and deployment of all resources by a SAM template.
 
 ## Software Architecture
 
+![main-arch-with-event-bridge (2)](https://user-images.githubusercontent.com/8766989/164071527-99500788-fc23-49f3-a8f1-ac2118539f8e.jpg)
+
+Initially, it was designed with SNS as message bus, then Ireplaced it with the EventBridge. The application is able to work with both message buses, in fact, it's possible to switch between them by the means of a AWS Systems Manager Parameter Store param, /darkpool/dev/bus-type, whose values can be SNS or EVENT-BRIDGE.
+
 ![main-arch (3)](https://user-images.githubusercontent.com/8766989/153915513-930d5631-71d1-4ee7-9418-3e19799478c3.jpg)
 
-The same pub/ sub and event-driven architecture can be represented with the EventBridge instead of the good old SNS. The application is able to work with both message buses, and it's possible to switch between them by the means of a AWS Systems Manager Parameter Store param, /darkpool/dev/bus-type, whose values can be SNS or EVENT-BRIDGE.
-
-![main-arch-with-event-bridge (2)](https://user-images.githubusercontent.com/8766989/153917044-76f85275-fd30-46d3-8894-de3c6deb1903.jpg)
 
 The client-side programming model is nearly the same, while SNS Topic Subscriptions are replaced by EventBridge Rules.
 With the EventBridge, source events can be modified before getting to consumers, for instance, by removing the event envelope, so to have a boilerplate-free events retrieval code, for instance, in the target Lambdas. 
@@ -110,6 +111,8 @@ The 2 API Gateways, SmartOrderRouter-API & DataExtractor-API, use the Lamba Prox
 
 ### Lambda Layer
 ![lambda-layers](https://user-images.githubusercontent.com/8766989/152656253-62478427-945a-48e4-b36b-ce0f648f50e0.jpg)
+
+In a real-world project, I'd have split the common code in multiple layers.
 
 ### Dark & Lit Pools
 While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by the broader audience, in fact, they're the commonly known Stock Exchanges, the same can't be said about [Dark Pools](https://en.wikipedia.org/wiki/Dark_pool).
