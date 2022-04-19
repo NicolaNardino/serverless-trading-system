@@ -1,9 +1,13 @@
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
+
+// @ts-ignore
 import { GetCommand, QueryCommand } from '/opt/nodejs/src/dependencies.js';
+// @ts-ignore
 import { ddbDocClient } from '/opt/nodejs/src/utils.js';
 
 const tableName = process.env.tradesStoreTableName;
 
-export async function handler(event) {
+export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   console.log(event);
     let result;
     const path = event.path;
@@ -33,7 +37,7 @@ export async function handler(event) {
             result = (await ddbDocClient.send(new GetCommand(params))).Item;
         }
         else
-            result = {Message: "Not a valid request"};
+            result = { Message: "Not a valid request" };
     }
     return {
         statusCode: 200,

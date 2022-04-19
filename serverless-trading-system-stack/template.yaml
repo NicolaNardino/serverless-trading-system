@@ -174,7 +174,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: DataExtractor
-      CodeUri: aws/src/lambdas/dataExtractor/
+      CodeUri: aws/dist/lambdas/dataExtractor/
       Handler: dataExtractor.handler
       Layers:
         - !Ref SamTradingSystemLayer

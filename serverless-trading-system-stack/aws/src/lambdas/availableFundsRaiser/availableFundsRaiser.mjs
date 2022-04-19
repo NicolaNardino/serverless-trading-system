@@ -1,9 +1,8 @@
 import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
-import { getDefaultIfUndefined, ddbDocClient, getParameters } from '/opt/nodejs/src/utils.js';
+import { ddbDocClient, getParameter } from '/opt/nodejs/src/utils.js';
 
-const paramValues = await getParameters(['/trading-system/dev/bus-type']);
-const busType = paramValues.get('/trading-system/dev/bus-type');
-const tableName = process.env.ddbTableName;
+const busType = await getParameter('/trading-system/dev/bus-type');
+const tradesStoreTableName = process.env.tradesStoreTableName;
 
 export async function handler(event) {
     //console.log(JSON.stringify(event));
@@ -30,7 +29,7 @@ async function updateCustomersAvailableFunds(orders) {
     const customerIds = [...new Set(orders.map(order => order.customerId))]; //customerIds that need funds raised.
     for (const customerId of customerIds) {
         const params = {
-            TableName: tableName,
+            TableName: tradesStoreTableName,
             Key: {
                 PK: "CUST#" + customerId,
                 SK: "CUST#" + customerId,
