@@ -65,7 +65,7 @@ Resources:
     Properties:
       Name: /trading-system/dev/market-data-api-base-url
       Type: String
-      Value: https://yfapi.net/v11/finance/
+      Value: https://yfapi.net/
       Description: Market Data Api Base URL
   MarketDataApiKey:
     Type: AWS::SSM::Parameter

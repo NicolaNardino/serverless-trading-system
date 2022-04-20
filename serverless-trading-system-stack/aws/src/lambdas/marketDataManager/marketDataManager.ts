@@ -7,7 +7,7 @@ import { fetch, PutObjectCommand, PutCommand } from '/opt/nodejs/src/dependencie
 const paramValues = await getParameters(['/trading-system/dev/market-data-api-base-url', '/trading-system/dev/market-data-api-key']);
 const marketDataApiBaseURL = paramValues.get('/trading-system/dev/market-data-api-base-url');
 const marketDataApiKey = paramValues.get('/trading-system/dev/market-data-api-key');
-const tradesStorageBucket = process.env.bucketName;
+const marketDataBucketName = process.env.bucketName;
 const marketDataTableName = process.env.marketDataTableName;
 const quoteSummaryModules = 'summaryDetail,assetProfile,fundProfile,financialData,defaultKeyStatistics,calendarEvents,incomeStatementHistory,incomeStatementHistoryQuarterly,cashflowStatementHistory,balanceSheetHistory,earnings,earningsHistory,insiderHolders,cashflowStatementHistory, cashflowStatementHistoryQuarterly,insiderTransactions,secFilings,indexTrend,sectorTrend,earningsTrend,netSharePurchaseActivity,upgradeDowngradeHistory,institutionOwnership,recommendationTrend,balanceSheetHistory,balanceSheetHistoryQuarterly,fundOwnership,majorDirectHolders, majorHoldersBreakdown, price, quoteType, esgScore';
 
@@ -16,35 +16,54 @@ export const handler = async (event: EventBridgeEvent<string, MarketDataDetail>)
   await getAndStoreMarketData(event.detail.tickers);
 };
 
-async function getAndStoreMarketData(tickers: Array<string>) {
-  await Promise.all(tickers.map(async (ticker) => {
-    const result = await fetch(marketDataApiBaseURL + 'quoteSummary/' + ticker + '?' + (new URLSearchParams({ modules: quoteSummaryModules })).toString(), {
+async function getAndStoreMarketData(tickers: string[]) {
+  await Promise.all(tickers.map(async (ticker) => await storeQuoteSummaryInDyanmoDBAndS3(ticker)));
+  await storeHistoricalDataInS3(tickers);
+}
+
+async function storeHistoricalDataInS3(tickers: string[]) {//it'll be enhanced to store data in DynamoDB too.
+//single request to get historical data for a batch of 10 tickers.
+const histDataParams = (new URLSearchParams({ inverval: '1d', range: '5y', symbols: tickers.join(',') })).toString();
+console.log('Hist data params ', marketDataApiBaseURL + 'v8/finance/spark?'+ histDataParams);
+const historicalDataHandle = await fetch(marketDataApiBaseURL + 'v8/finance/spark?'+ histDataParams, {
+  method: 'GET',
+  headers: { 'Content-Type': 'application/json', 'x-api-key': marketDataApiKey }
+});
+const hostoricalDataS3Key = 'marketData/history/' + tickers.join('_');
+const historicalData = await historicalDataHandle.json();
+await s3Client.send(new PutObjectCommand({
+  Bucket: marketDataBucketName,
+  Key: hostoricalDataS3Key,
+  Body: JSON.stringify(historicalData),
+  ContentType: "application/json"
+}));
+console.log("Market data/ hostory for ", tickers.join('_'), "stored in S3 bucket ", marketDataBucketName);
+}
+
+async function storeQuoteSummaryInDyanmoDBAndS3(ticker: string) {
+  try {
+    const quoteSummaryHandle = await fetch(marketDataApiBaseURL + 'v11/finance/quoteSummary/' + ticker + '?' + (new URLSearchParams({ modules: quoteSummaryModules })).toString(), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', 'x-api-key': marketDataApiKey }
     });
-    const marketDataS3Key = 'marketData/' + ticker + '/quoteSummary';
-    const marketData = await result.json();
+    const quoteSummaryS3Key = 'marketData/' + ticker + '/quoteSummary';
+    const quoteSummary = await quoteSummaryHandle.json();
     await s3Client.send(new PutObjectCommand({
-      Bucket: tradesStorageBucket,
-      Key: marketDataS3Key,
-      Body: JSON.stringify(marketData),
+      Bucket: marketDataBucketName,
+      Key: quoteSummaryS3Key,
+      Body: JSON.stringify(quoteSummary),
       ContentType: "application/json"
     }));
-    console.log("Market data for ", ticker, "stored in S3 bucket ", tradesStorageBucket);
-    await storeMarketDataInDyanmoDB(ticker, marketData, marketDataS3Key);
-  }));
-}
+    console.log("Market data/ quoteSummary for ", ticker, "stored in S3 bucket ", marketDataBucketName);
 
-async function storeMarketDataInDyanmoDB(ticker: string, marketData: any, marketDataS3Key: string) {
-  try {
-    const defaultKeyStatistics = marketData.quoteSummary.result[0].defaultKeyStatistics;
-    const summaryDetail = marketData.quoteSummary.result[0].summaryDetail;
+    const defaultKeyStatistics = quoteSummary.quoteSummary.result[0].defaultKeyStatistics;
+    const summaryDetail = quoteSummary.quoteSummary.result[0].summaryDetail;
     const params = {
       TableName: marketDataTableName,
       Item: {
         "PK": "TICKER#" + ticker,
         "SK": "SUMMARY#" + ticker,
-        "S3Key": marketDataS3Key,
+        "QuoteSummaryS3Key": quoteSummaryS3Key,
         "EnterpriseValue": emptyIfUndefined(defaultKeyStatistics.enterpriseValue?.raw),
         "ForwardPE": emptyIfUndefined(defaultKeyStatistics.forwardPE?.raw),
         "ProfitMargins": emptyIfUndefined(defaultKeyStatistics.profitMargins?.raw),
@@ -62,7 +81,7 @@ async function storeMarketDataInDyanmoDB(ticker: string, marketData: any, market
     await ddbDocClient.send(new PutCommand(params));
   }
   catch (e) {
-    console.log(e);
+    console.log('Failed to store market data quoteSummary for ticker ', ticker, e);
   }
 }
 
