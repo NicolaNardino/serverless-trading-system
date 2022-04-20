@@ -1,9 +1,12 @@
+import { DynamoDBStreamEvent } from 'aws-lambda';
+// @ts-ignore
 import { delay, ddbDocClient } from '/opt/nodejs/src/utils.js';
+// @ts-ignore
 import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
 
 const tableName = process.env.tradesStoreTableName;
 
-export async function handler(event) {
+export async function handler(event: DynamoDBStreamEvent) {
     //console.log(event);
     const today = new Date().toISOString().split('T')[0];
     for (const record of event.Records) {
