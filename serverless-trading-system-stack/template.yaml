@@ -198,7 +198,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: SmartOrderRouter
-      CodeUri: aws/src/lambdas/smartOrderRouter/
+      CodeUri: aws/dist/lambdas/smartOrderRouter/
       Handler: smartOrderRouter.handler
       Layers:
         - !Ref SamTradingSystemLayer
