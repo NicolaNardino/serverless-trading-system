@@ -3,6 +3,7 @@ import { ddbDocClient, getParameter } from '/opt/nodejs/src/utils.js';
 
 const busType = await getParameter('/trading-system/dev/bus-type');
 const tradesStoreTableName = process.env.tradesStoreTableName;
+const newFunds = 10000000;
 
 export async function handler(event) {
     //console.log(JSON.stringify(event));
@@ -24,8 +25,7 @@ export async function handler(event) {
     };
 }
 
-async function updateCustomersAvailableFunds(orders) {
-    const newFunds = 1000000;
+async function updateCustomersAvailableFunds(orders) {    
     const customerIds = [...new Set(orders.map(order => order.customerId))]; //customerIds that need funds raised.
     for (const customerId of customerIds) {
         const params = {
