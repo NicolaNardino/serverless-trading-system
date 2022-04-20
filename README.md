@@ -12,12 +12,11 @@ Main technologies used:
 
 ![main-arch-with-event-bridge (2)](https://user-images.githubusercontent.com/8766989/164071527-99500788-fc23-49f3-a8f1-ac2118539f8e.jpg)
 
-Initially, it was designed with SNS as message bus, then Ireplaced it with the EventBridge. The application is able to work with both message buses, in fact, it's possible to switch between them by the means of a AWS Systems Manager Parameter Store param, /darkpool/dev/bus-type, whose values can be SNS or EVENT-BRIDGE.
+Initially, it was designed with SNS as message bus, then replaced with EventBridge. The application is able to work with both message buses, in fact, it's possible to switch between them by the means of a AWS Systems Manager Parameter Store param, /serverless-trading-system/dev/bus-type, whose values can be SNS or EVENT-BRIDGE. For straight pub/ sub use cases, the EventBridge client/ service programming model matches almost 1:1 the SNS one, for instance: 
 
-![main-arch (3)](https://user-images.githubusercontent.com/8766989/153915513-930d5631-71d1-4ee7-9418-3e19799478c3.jpg)
+- SNS subscriptions --> EventBridge rules.
+- Similar client-side API.
 
-
-The client-side programming model is nearly the same, while SNS Topic Subscriptions are replaced by EventBridge Rules.
 With the EventBridge, source events can be modified before getting to consumers, for instance, by removing the event envelope, so to have a boilerplate-free events retrieval code, for instance, in the target Lambdas. 
 
 Rule example:
@@ -35,6 +34,8 @@ Part of the matched event target deliver:
 $.detail.orders
 ```
 Where detail is the event envelope. In this way, only the array of orders will be delivered to the target. Compare that with the boilerplate code require in a SNS subscriber.
+
+Future developments will only support EventBridge, specifically, from the Market Data introduction.
 
 ## Order flow
 
@@ -114,6 +115,10 @@ The 2 API Gateways, SmartOrderRouter-API & DataExtractor-API, use the Lamba Prox
 
 In a real-world project, I'd have split the common code in multiple layers.
 
+### Market Data
+Yahoo Finance is the data source for market data, ticker (quote) summary and historical data. 
+I'm targeting to assess customers' portfolios at given dates.
+
 ### Dark & Lit Pools
 While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by the broader audience, in fact, they're the commonly known Stock Exchanges, the same can't be said about [Dark Pools](https://en.wikipedia.org/wiki/Dark_pool).
 
@@ -122,3 +127,4 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 ## TODO
 
 - Configure local environment and add tests.
+- JavaScript to TypeScript conversion.
