@@ -6,7 +6,7 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 10
 
 Parameters:
   tradesStoreTableName:
@@ -277,7 +277,24 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: AvailableFundsRaiser
-      CodeUri: aws/src/lambdas/availableFundsRaiser/
+      CodeUri: aws/dist/lambdas/availableFundsRaiser/
+      Handler: availableFundsRaiser.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+        - DynamoDBWritePolicy: 
+            TableName: !Ref DDBTable
+      Environment:
+        Variables:
+          tradesStoreTableName: !Ref DDBTable
+      Architectures:
+        - x86_64
+  AvailableFundsRaiserLegacyLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: AvailableFundsRaiserLegacy
+      CodeUri: aws/src/lambdas/legacy/availableFundsRaiser/
       Handler: availableFundsRaiser.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -396,10 +413,10 @@ Resources:
       FilterPolicy:
         PoolType:
           - Dark
-  OrdersDispatcherTopicAvailableFundsRaiserLambdaSubscription:
+  OrdersDispatcherTopicAvailableFundsRaiserLegacyLambdaSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt AvailableFundsRaiserLambda.Arn
+      Endpoint: !GetAtt AvailableFundsRaiserLegacyLambda.Arn
       Protocol: lambda
       TopicArn: !Ref OrdersDispatcherTopic
       FilterPolicy:
@@ -462,6 +479,30 @@ Resources:
               - "Arn"
           Id: "DarkPoolMatchingEngineTarget"
           InputPath: "$.detail.Orders"
+  AvailableFundsRaiserLegacyRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: AvailableFundsRaiserLegacy
+      Description: Forward SmartOrderRouter orders with customers credit check failed to AvailableFundsRaiser.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "SmartOrderRouter"
+        detail-type:
+          - Orders
+        detail: 
+          InvalidOrders: 
+            - "CreditCheckLegacy" #Don't want this rule to execute, in normal circumstances, when the non-legacy version is active.
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "AvailableFundsRaiserLegacyLambda"
+              - "Arn"
+          Id: "AvailableFundsRaiserLegacyTarget"
+          InputPath: "$.detail.Orders"
+  
   AvailableFundsRaiserRule:
     Type: AWS::Events::Rule
     Properties:
@@ -484,7 +525,6 @@ Resources:
               - "AvailableFundsRaiserLambda"
               - "Arn"
           Id: "AvailableFundsRaiserTarget"
-          InputPath: "$.detail.Orders"
   PostTradeProcessorRule:
     Type: AWS::Events::Rule
     Properties:
@@ -552,6 +592,17 @@ Resources:
         Fn::GetAtt: 
           - "DarkPoolsOrdersRule"
           - "Arn"
+  AvailableFundsRaiserLegacyLambdaEventsInvokePermission: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "AvailableFundsRaiserLegacyLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "AvailableFundsRaiserLegacyRule"
+          - "Arn"
   AvailableFundsRaiserLambdaEventsInvokePermission: 
     Type: AWS::Lambda::Permission
     Properties: 
@@ -599,11 +650,11 @@ Resources:
       Action: 'lambda:InvokeFunction'
       FunctionName: !Ref DarkPoolMatchingEngineLambda
       Principal: sns.amazonaws.com
-  AvailableFundsRaiserLambdaInvokePermission:
+  AvailableFundsRaiserLegacyLambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref AvailableFundsRaiserLambda
+      FunctionName: !Ref AvailableFundsRaiserLegacyLambda
       Principal: sns.amazonaws.com
   PostTradeProcessorLambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'

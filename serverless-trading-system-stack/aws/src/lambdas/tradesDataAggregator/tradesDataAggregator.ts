@@ -85,7 +85,7 @@ export async function handler(event: DynamoDBStreamEvent) {
                     UpdateExpression: 'SET #NrTrades = if_not_exists(#NrTrades, :Start) + :Count, #TotalCommissionPaid = if_not_exists(#TotalCommissionPaid, :Start) + :Fee, ' +
                         '#TotalAmountInvested = if_not_exists(#TotalAmountInvested, :Start) + :AmountInvested, #RemainingFunds = #RemainingFunds - :AmountInvested, #Updated = :Now'
                 };
-                await ddbDocClient.send(new UpdateCommand(customerUpdateExpr));
+                await ddbDocClient.send(new UpdateCommand(pnlExpr));
                 //console.log('Updated key: '+JSON.stringify(customerUpdateExpr.Key));
                 await delay(200);
             }

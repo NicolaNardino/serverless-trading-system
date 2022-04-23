@@ -5,6 +5,7 @@ const busType = await getParameter('/trading-system/dev/bus-type');
 const tradesStoreTableName = process.env.tradesStoreTableName;
 const newFunds = 10000000;
 
+//This can work with both SNS and EventBridge. It's now legacy, because during the TypeScript conversion phase I've decided, for the sake of simplicity, to only allow for the EventBridge.
 export async function handler(event) {
     //console.log(JSON.stringify(event));
     switch (busType) {
@@ -18,11 +19,6 @@ export async function handler(event) {
         default:
             console.log('Not a valid busType[SNS, EVENT-BRIDGE]: ', busType);
     }
-
-    return {
-        statusCode: 200,
-        body: JSON.stringify('Available funds raised'),
-    };
 }
 
 async function updateCustomersAvailableFunds(orders) {    
