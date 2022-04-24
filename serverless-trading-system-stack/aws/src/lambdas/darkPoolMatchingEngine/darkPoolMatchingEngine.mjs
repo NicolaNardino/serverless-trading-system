@@ -12,7 +12,7 @@ export async function handler(event) {
     switch (busType) {
         case 'EVENT-BRIDGE':
             //console.log(event);
-            tradesAndNotMatchedWithinDarkPool.push(...await turnOrdersIntoTradesOrLitPoolsOrders(event));
+            tradesAndNotMatchedWithinDarkPool.push(...await turnOrdersIntoTradesOrLitPoolsOrders(event));            
             const params = {
                 Entries: [
                     {
@@ -21,8 +21,8 @@ export async function handler(event) {
                         DetailType: "Trades",
                         Time: new Date(),
                         Detail: JSON.stringify({
-                            PostTrade: "True",
-                            Trades: tradesAndNotMatchedWithinDarkPool.filter(t => t.exchangeType === "DarkPool")
+                            postTrade: "True",
+                            trades: tradesAndNotMatchedWithinDarkPool.filter(t => t.exchangeType === "DarkPool")
                         })
                     },
                     {
@@ -31,8 +31,8 @@ export async function handler(event) {
                         DetailType: "Trades",
                         Time: new Date(),
                         Detail: JSON.stringify({
-                            PoolType: "Lit",
-                            Trades: tradesAndNotMatchedWithinDarkPool.filter(t => t.notMatchedInDarkPool === "True")
+                            poolType: "Lit",
+                            trades: tradesAndNotMatchedWithinDarkPool.filter(t => t.notMatchedInDarkPool === "True")
                         })
                     }]
             };
@@ -43,12 +43,12 @@ export async function handler(event) {
             const topicArn = event.Records[0].Sns.TopicArn;
             await Promise.all(event.Records.map(async record => tradesAndNotMatchedWithinDarkPool.push(...await turnOrdersIntoTradesOrLitPoolsOrders(JSON.parse(record.Sns.Message)))));
             await Promise.all([await publishToSns(topicArn, tradesAndNotMatchedWithinDarkPool.filter(t => t.exchangeType === "DarkPool"), {
-                "PostTrade": {
+                "postTrade": {
                     "DataType": "String",
                     "StringValue": "True"
                 }
             }), publishToSns(topicArn, tradesAndNotMatchedWithinDarkPool.filter(t => t.notMatchedInDarkPool === "True"), {
-                "PoolType": {
+                "poolType": {
                     "DataType": "String",
                     "StringValue": "Lit"
                 }
@@ -70,7 +70,7 @@ export async function handler(event) {
 
 //randomly match order within the DarkPool. If not matched, forward it to LitPools.
 async function turnOrdersIntoTradesOrLitPoolsOrders(orders) {
-    return Promise.all(orders.map(async order => {
+    return await Promise.all(orders.map(async order => {
         if (getRandomBoolean())
             return {
                 ...order,

@@ -8,8 +8,8 @@ import { ddbDocClient } from '/opt/nodejs/src/utils.js';
 const tradesStoreTableName = process.env.tradesStoreTableName;
 const newFunds = 10000000;
 
-export async function handler(event: EventBridgeEvent<string, Order[]>) {
-    await updateCustomersAvailableFunds(event.detail);
+export async function handler(event: EventBridgeEvent<string, Orders>) {
+    await updateCustomersAvailableFunds(event.detail.orders);
 }
 
 async function updateCustomersAvailableFunds(orders: Order[]) {
@@ -30,6 +30,10 @@ async function updateCustomersAvailableFunds(orders: Order[]) {
         await ddbDocClient.send(new UpdateCommand(params));
         console.log("Updated remaining funds of customerId", customerId, "to", newFunds);
     }));
+}
+
+interface Orders {
+    orders: Order[]
 }
 
 interface Order {

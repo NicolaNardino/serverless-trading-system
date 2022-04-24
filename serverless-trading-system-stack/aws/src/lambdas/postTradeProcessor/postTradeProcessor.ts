@@ -9,11 +9,11 @@ const tradesStorageBucket = process.env.bucketName;
 const tableName = process.env.tradesStoreTableName;
 const eventBusName = process.env.eventBusName;
 
-export async function handler(event: EventBridgeEvent<string, Trade[]>) {
+export async function handler(event: EventBridgeEvent<string, Trades>) {
     //console.log(JSON.stringify(event));
     const today = new Date().toISOString().slice(0, 10);
     const fileName = buildS3FileName(today);
-    const result = await Promise.all([storeTradesInS3(fileName, event.detail), storeTradesInDynamoDB(event.detail), eventBridgeClient.send(new PutEventsCommand({
+    const result = await Promise.all([storeTradesInS3(fileName, event.detail.trades), storeTradesInDynamoDB(event.detail.trades), eventBridgeClient.send(new PutEventsCommand({
         Entries: [
             {
                 Source: "PostTradeProcessor",
@@ -21,8 +21,8 @@ export async function handler(event: EventBridgeEvent<string, Trade[]>) {
                 DetailType: "Trades",
                 Time: new Date(),
                 Detail: JSON.stringify({
-                    TradesSettled: "True",
-                    Trades: event
+                    tradesSettled: "True",
+                    trades: event.detail.trades
                 })
             }]
     }))]);
@@ -53,7 +53,7 @@ async function storeTradesInDynamoDB(trades: Trade[]) {
             TableName: tableName,
             Item: {
                 "PK": "CUST#" + trade.customerId,
-                "SK": "TRADE#" + trade.tradeDate.toISOString().split('T')[0] + "#" + trade.tradeId,
+                "SK": "TRADE#" + trade.tradeDate.split('T')[0] + "#" + trade.tradeId,
                 "Ticker": trade.ticker,
                 "Direction": trade.direction,
                 "Type": trade.type,
@@ -81,14 +81,14 @@ async function storeTradesInDynamoDB(trades: Trade[]) {
 
 interface Trade {
     customerId: string;
-    tradeDate: Date;
+    tradeDate: string;
     ticker: string;
     direction: Direction;
     type: Type;
     quantity: number;
     price: number;
     orderId: string;
-    orderDate: Date;
+    orderDate: string;
     tradeId: string;
     exchange: string;
     exchangeType: string;
@@ -101,3 +101,7 @@ interface Trade {
 enum Direction { Buy, Sell };
 
 enum Type { Market, Limit };
+
+interface Trades {
+    trades: Trade[]
+}

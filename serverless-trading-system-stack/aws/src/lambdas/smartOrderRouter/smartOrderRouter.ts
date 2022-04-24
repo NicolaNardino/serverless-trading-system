@@ -126,19 +126,19 @@ async function publishToSNSOrEventBridge(invalidOrders: Order[], darkPoolOrders:
             break;
         case 'SNS':
             await Promise.all([publishToSns(ordersDispatcherTopicArn, litPoolOrders, {
-                "PoolType": {
+                "poolType": {
                     "DataType": "String",
                     "StringValue": "Lit"
                 }
             }), publishToSns(ordersDispatcherTopicArn, darkPoolOrders, {
-                "PoolType": {
+                "poolType": {
                     "DataType": "String",
                     "StringValue": "Dark"
                 }
             })]);
             if (invalidOrders.length > 0)
                 await publishToSns(ordersDispatcherTopicArn, invalidOrders, {
-                    "InvalidOrders": {
+                    "invalidOrders": {
                         "DataType": "String",
                         "StringValue": "CreditCheck"
                     }
@@ -150,27 +150,35 @@ async function publishToSNSOrEventBridge(invalidOrders: Order[], darkPoolOrders:
 }
 
 function buildEventBridgeOrders(invalidOrders: Order[], darkPoolOrders: Order[], litPoolOrders: Order[]) {
-    const entries = [
-        {
+    const entries: {
+        Source: string;
+        EventBusName: string;
+        DetailType: string;
+        Time: Date;
+        Detail: string;
+    }[] = [];
+    if (darkPoolOrders.length > 0)
+        entries.push({
             Source: "SmartOrderRouter",
             EventBusName: eventBusName,
             DetailType: "Orders",
             Time: new Date(),
             Detail: JSON.stringify({//EventBridge doesn't allow to send straight arrays as Detail's content, although the docs say that it's sufficient to be a valid json object :), so I've to wrap the array with an attribute.
-                PoolType: "Dark",
-                Orders: darkPoolOrders
+                poolType: "Dark",
+                orders: darkPoolOrders
             })
-        },
-        {
+        });
+    if (litPoolOrders.length > 0)
+        entries.push({
             Source: "SmartOrderRouter",
             EventBusName: eventBusName,
             DetailType: "Orders",
             Time: new Date(),
             Detail: JSON.stringify({
-                PoolType: 'Lit',
-                Orders: litPoolOrders
+                poolType: 'Lit',
+                orders: litPoolOrders
             })
-        }];
+        });
     if (invalidOrders.length > 0)
         entries.push({
             Source: "SmartOrderRouter",
@@ -178,11 +186,10 @@ function buildEventBridgeOrders(invalidOrders: Order[], darkPoolOrders: Order[],
             DetailType: "Orders",
             Time: new Date(),
             Detail: JSON.stringify({
-                InvalidOrders: 'CreditCheck',
-                Orders: invalidOrders
+                invalidOrders: 'CreditCheck',
+                orders: invalidOrders
             })
         });
-
     return entries;
 }
 

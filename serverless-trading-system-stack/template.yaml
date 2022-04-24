@@ -315,7 +315,30 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: PostTradeProcessor
-      CodeUri: aws/src/lambdas/postTradeProcessor/
+      CodeUri: aws/dist/lambdas/postTradeProcessor/
+      Handler: postTradeProcessor.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref TradesStorageS3BucketName
+        - DynamoDBWritePolicy: 
+            TableName: !Ref DDBTable
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBusName
+      Environment:
+        Variables:
+          tradesStoreTableName: !Ref DDBTable
+          bucketName: !Ref TradesStorageS3BucketName
+          eventBusName: !Ref EventBus
+      Architectures:
+        - x86_64
+  PostTradeProcessorLegacyLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: PostTradeProcessorLegacy
+      CodeUri: aws/src/lambdas/legacy/postTradeProcessor/
       Handler: postTradeProcessor.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -402,7 +425,7 @@ Resources:
       Protocol: lambda
       TopicArn: !Ref OrdersDispatcherTopic
       FilterPolicy:
-        PoolType:
+        poolType:
           - Lit
   OrdersDispatcherTopicDarkPoolMatchingEngineLambdaSubscription:
     Type: AWS::SNS::Subscription
@@ -411,7 +434,7 @@ Resources:
       Protocol: lambda
       TopicArn: !Ref OrdersDispatcherTopic
       FilterPolicy:
-        PoolType:
+        poolType:
           - Dark
   OrdersDispatcherTopicAvailableFundsRaiserLegacyLambdaSubscription:
     Type: AWS::SNS::Subscription
@@ -420,16 +443,16 @@ Resources:
       Protocol: lambda
       TopicArn: !Ref OrdersDispatcherTopic
       FilterPolicy:
-        InvalidOrders:
+        invalidOrders:
           - CreditCheck
-  OrdersDispatcherTopicPostTradeProcessorLambdaSubscription:
+  OrdersDispatcherTopicPostTradeProcessorLegacyLambdaSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt PostTradeProcessorLambda.Arn
+      Endpoint: !GetAtt PostTradeProcessorLegacyLambda.Arn
       Protocol: lambda
       TopicArn: !Ref OrdersDispatcherTopic
       FilterPolicy:
-        PostTrade:
+        postTrade:
           - "True"
 
   LitPoolsOrdersRule:
@@ -445,7 +468,7 @@ Resources:
         detail-type:
           - Orders
         detail: 
-          PoolType: 
+          poolType: 
             - "Lit"
       State: "ENABLED"
       Targets: 
@@ -455,7 +478,7 @@ Resources:
               - "LitPoolMatchingEngineLambda"
               - "Arn"
           Id: "LitPoolMatchingEngineTarget"
-          InputPath: "$.detail.Orders"
+          InputPath: "$.detail.orders"
   DarkPoolsOrdersRule:
     Type: AWS::Events::Rule
     Properties:
@@ -468,7 +491,7 @@ Resources:
         detail-type:
           - Orders
         detail: 
-          PoolType: 
+          ppolType: 
             - "Dark"
       State: "ENABLED"
       Targets: 
@@ -478,31 +501,7 @@ Resources:
               - "DarkPoolMatchingEngineLambda"
               - "Arn"
           Id: "DarkPoolMatchingEngineTarget"
-          InputPath: "$.detail.Orders"
-  AvailableFundsRaiserLegacyRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Name: AvailableFundsRaiserLegacy
-      Description: Forward SmartOrderRouter orders with customers credit check failed to AvailableFundsRaiser.
-      EventBusName: !Ref EventBus
-      EventPattern: 
-        source: 
-          - "SmartOrderRouter"
-        detail-type:
-          - Orders
-        detail: 
-          InvalidOrders: 
-            - "CreditCheckLegacy" #Don't want this rule to execute, in normal circumstances, when the non-legacy version is active.
-      State: "ENABLED"
-      Targets: 
-        - 
-          Arn: 
-            Fn::GetAtt: 
-              - "AvailableFundsRaiserLegacyLambda"
-              - "Arn"
-          Id: "AvailableFundsRaiserLegacyTarget"
-          InputPath: "$.detail.Orders"
-  
+          InputPath: "$.detail.orders"
   AvailableFundsRaiserRule:
     Type: AWS::Events::Rule
     Properties:
@@ -515,7 +514,7 @@ Resources:
         detail-type:
           - Orders
         detail: 
-          InvalidOrders: 
+          invalidOrders: 
             - "CreditCheck"
       State: "ENABLED"
       Targets: 
@@ -525,6 +524,31 @@ Resources:
               - "AvailableFundsRaiserLambda"
               - "Arn"
           Id: "AvailableFundsRaiserTarget"
+
+  AvailableFundsRaiserLegacyRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: AvailableFundsRaiserLegacy
+      Description: Forward SmartOrderRouter orders with customers credit check failed to AvailableFundsRaiser.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "SmartOrderRouter"
+        detail-type:
+          - Orders
+        detail: 
+          invalidOrders: 
+            - "CreditCheckLegacy" #Don't want this rule to execute, in normal circumstances, when the non-legacy version is active.
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "AvailableFundsRaiserLegacyLambda"
+              - "Arn"
+          Id: "AvailableFundsRaiserLegacyTarget"
+          InputPath: "$.detail.orders"
+  
   PostTradeProcessorRule:
     Type: AWS::Events::Rule
     Properties:
@@ -538,7 +562,7 @@ Resources:
         detail-type:
           - Trades
         detail: 
-          PostTrade: 
+          postTrade: 
             - "True"
       State: "ENABLED"
       Targets: 
@@ -548,7 +572,32 @@ Resources:
               - "PostTradeProcessorLambda"
               - "Arn"
           Id: "PostTradeProcessorTarget"
-          InputPath: "$.detail.Trades"
+  
+  PostTradeProcessorLegacyRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: PostTradeProcessorLegacy
+      Description: Post processes trades coming from Dark or Lit pool matching engines.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "LitPoolMatchingEngine"
+          - "DarkPoolMatchingEngine"
+        detail-type:
+          - Trades
+        detail: 
+          postTrade: 
+            - "TrueLegacy" #Don't want this rule to execute, in normal circumstances, when the non-legacy version is active.
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "PostTradeProcessorLegacyLambda"
+              - "Arn"
+          Id: "PostTradeProcessorLegacyTarget"
+          InputPath: "$.detail.trades"
+
   MarketDataManagerRule:
     Type: AWS::Events::Rule
     Properties:
@@ -625,6 +674,17 @@ Resources:
         Fn::GetAtt: 
           - "PostTradeProcessorRule"
           - "Arn"
+  PostTradeProcessorLegacyLambdaEventsInvokePermission: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "PostTradeProcessorLegacyLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "PostTradeProcessorLegacyRule"
+          - "Arn"
   MarketDataManagerLambdaEventsInvokePermission: 
     Type: AWS::Lambda::Permission
     Properties: 
@@ -656,11 +716,11 @@ Resources:
       Action: 'lambda:InvokeFunction'
       FunctionName: !Ref AvailableFundsRaiserLegacyLambda
       Principal: sns.amazonaws.com
-  PostTradeProcessorLambdaInvokePermission:
+  PostTradeProcessorLambdaLegacyInvokePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref PostTradeProcessorLambda
+      FunctionName: !Ref PostTradeProcessorLegacyLambda
       Principal: sns.amazonaws.com
 
 Outputs:

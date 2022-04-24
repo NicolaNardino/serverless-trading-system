@@ -22,8 +22,8 @@ export async function handler(event) {
                         DetailType: "Trades",
                         Time: new Date(),
                         Detail: JSON.stringify({
-                            PostTrade: "True",
-                            Trades: trades
+                            postTrade: "True",
+                            trades: trades
                         })
                     }]
             };
@@ -33,7 +33,7 @@ export async function handler(event) {
         case 'SNS':
             await Promise.all(event.Records.map(async record => trades.push(...await turnOrdersIntoTrades(JSON.parse(record.Sns.Message)))));
             await publishToSns(event.Records[0].Sns.TopicArn, trades, {
-                "PostTrade": {
+                "postTrade": {
                     "DataType": "String",
                     "StringValue": "True"
                 }
@@ -54,7 +54,7 @@ export async function handler(event) {
 }
 
 async function turnOrdersIntoTrades(orders) {
-    return Promise.all(orders.map(async order => {
+    return await Promise.all(orders.map(async order => {
         const randomExchange = getRandomArrayEntry(litPools);
         const randomFee = (randomExchange == "EBS" ? getRandom(1, 10).toFixed(2) : getRandom(0, 1).toFixed(2)); //yes, EBS (CH) is way more expensive than US exchanges.
         return {
