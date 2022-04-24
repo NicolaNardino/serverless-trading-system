@@ -47,17 +47,17 @@ async function storeQuoteSummaryInDyanmoDBAndS3(ticker: string) {
       headers: { 'Content-Type': 'application/json', 'x-api-key': marketDataApiKey }
     });
     const quoteSummaryS3Key = 'marketData/' + ticker + '/quoteSummary';
-    const quoteSummary = await quoteSummaryHandle.json();
+    const quoteSummaryActual: any = await quoteSummaryHandle.json();
     await s3Client.send(new PutObjectCommand({
       Bucket: marketDataBucketName,
       Key: quoteSummaryS3Key,
-      Body: JSON.stringify(quoteSummary),
+      Body: JSON.stringify(quoteSummaryActual),
       ContentType: "application/json"
     }));
     console.log("Market data/ quoteSummary for ", ticker, "stored in S3 bucket ", marketDataBucketName);
 
-    const defaultKeyStatistics = quoteSummary.quoteSummary.result[0].defaultKeyStatistics;
-    const summaryDetail = quoteSummary.quoteSummary.result[0].summaryDetail;
+    const defaultKeyStatistics = quoteSummaryActual.quoteSummary.result[0].defaultKeyStatistics;
+    const summaryDetail = quoteSummaryActual.quoteSummary.result[0].summaryDetail;
     const params = {
       TableName: marketDataTableName,
       Item: {
