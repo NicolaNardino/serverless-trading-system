@@ -233,7 +233,27 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: LitPoolMatchingEngine
-      CodeUri: aws/src/lambdas/litPoolMatchingEngine/
+      CodeUri: aws/dist/lambdas/litPoolMatchingEngine/
+      Handler: litPoolMatchingEngine.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBusName
+      Environment:
+        Variables:
+          eventBusName: !Ref EventBus
+          fargateMarketDataServicesBaseURL: !Ref FargateMarketDataServicesBaseURL
+      Architectures:
+        - x86_64
+  LitPoolMatchingEngineLegacyLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: LitPoolMatchingEngineLegacy
+      CodeUri: aws/src/lambdas/legacy/litPoolMatchingEngine/
       Handler: litPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -255,7 +275,27 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: DarkPoolMatchingEngine
-      CodeUri: aws/src/lambdas/darkPoolMatchingEngine/
+      CodeUri: aws/dist/lambdas/darkPoolMatchingEngine/
+      Handler: darkPoolMatchingEngine.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs14.x
+      Policies: 
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBusName
+      Environment:
+        Variables:
+          eventBusName: !Ref EventBus
+          fargateMarketDataServicesBaseURL: !Ref FargateMarketDataServicesBaseURL
+      Architectures:
+        - x86_64
+  DarkPoolMatchingEngineLegacyLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: DarkPoolMatchingEngineLegacy
+      CodeUri: aws/src/lambdas/legacy/darkPoolMatchingEngine/
       Handler: darkPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -418,19 +458,19 @@ Resources:
               - x86_64
             RetentionPolicy: Retain
   
-  OrdersDispatcherTopicLitPoolMatchingEngineLambdaSubscription:
+  OrdersDispatcherTopicLitPoolMatchingEngineLegacyLambdaSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt LitPoolMatchingEngineLambda.Arn
+      Endpoint: !GetAtt LitPoolMatchingEngineLegacyLambda.Arn
       Protocol: lambda
       TopicArn: !Ref OrdersDispatcherTopic
       FilterPolicy:
         poolType:
           - Lit
-  OrdersDispatcherTopicDarkPoolMatchingEngineLambdaSubscription:
+  OrdersDispatcherTopicDarkPoolMatchingEngineLegacyLambdaSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt DarkPoolMatchingEngineLambda.Arn
+      Endpoint: !GetAtt DarkPoolMatchingEngineLegacyLambda.Arn
       Protocol: lambda
       TopicArn: !Ref OrdersDispatcherTopic
       FilterPolicy:
@@ -478,6 +518,29 @@ Resources:
               - "LitPoolMatchingEngineLambda"
               - "Arn"
           Id: "LitPoolMatchingEngineTarget"
+  LitPoolsOrdersLegacyRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: LitPoolsOrdersLegacy
+      Description: Forward orders coming from SmartOrderRouter or DarkPoolMatchingEngine to LitPoolMatchingEngine.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "SmartOrderRouter"
+          - "DarkPoolMatchingEngine"
+        detail-type:
+          - Orders
+        detail: 
+          poolType: 
+            - "LitLegacy" #Don't want this rule to execute, in normal circumstances, when the non-legacy version is active.
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "LitPoolMatchingEngineLegacyLambda"
+              - "Arn"
+          Id: "LitPoolMatchingEngineTarget"
           InputPath: "$.detail.orders"
   DarkPoolsOrdersRule:
     Type: AWS::Events::Rule
@@ -491,7 +554,7 @@ Resources:
         detail-type:
           - Orders
         detail: 
-          ppolType: 
+          poolType: 
             - "Dark"
       State: "ENABLED"
       Targets: 
@@ -501,6 +564,28 @@ Resources:
               - "DarkPoolMatchingEngineLambda"
               - "Arn"
           Id: "DarkPoolMatchingEngineTarget"
+  DarkPoolsOrdersLegacyRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: DarkPoolsOrdersLegacy
+      Description: Forward orders coming from SmartOrderRouter to DarkPoolMatchingEngine.
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "SmartOrderRouter"
+        detail-type:
+          - Orders
+        detail: 
+          poolType: 
+            - "DarkLegacy" #Don't want this rule to execute, in normal circumstances, when the non-legacy version is active.
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "DarkPoolMatchingEngineLegacyLambda"
+              - "Arn"
+          Id: "DarkPoolMatchingEngineLegacyTarget"
           InputPath: "$.detail.orders"
   AvailableFundsRaiserRule:
     Type: AWS::Events::Rule
@@ -618,7 +703,7 @@ Resources:
               - "Arn"
           Id: "MarketDataManagerTarget"
 
-  # Provide permission for EventBridre to invoke the Lambda function
+  # Provide permission for EventBridge to invoke the Lambda function
   LitPoolMatchingEngineLambdaEventsInvokePermission: 
     Type: AWS::Lambda::Permission
     Properties: 
@@ -630,7 +715,18 @@ Resources:
         Fn::GetAtt: 
           - "LitPoolsOrdersRule"
           - "Arn"
-  DarkPoolMatchingEngineLambdaEventsInvokePermission: 
+  LitPoolMatchingEngineLegacyLambdaEventsInvokePermission: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "LitPoolMatchingEngineLegacyLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "LitPoolsOrdersLegacyRule"
+          - "Arn"
+  DarkPoolMatchingEngineLambdaEventsInvokePermission:
     Type: AWS::Lambda::Permission
     Properties: 
       FunctionName: 
@@ -640,6 +736,17 @@ Resources:
       SourceArn: 
         Fn::GetAtt: 
           - "DarkPoolsOrdersRule"
+          - "Arn"
+  DarkPoolMatchingEngineLegacyLambdaEventsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "DarkPoolMatchingEngineLegacyLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "DarkPoolsOrdersLegacyRule"
           - "Arn"
   AvailableFundsRaiserLegacyLambdaEventsInvokePermission: 
     Type: AWS::Lambda::Permission
@@ -698,17 +805,17 @@ Resources:
           - "Arn"
       
   # Provide permission for SNS to invoke the Lambda function
-  LitPoolMatchingEngineLambdaInvokePermission:
+  LitPoolMatchingEngineLegacyLambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref LitPoolMatchingEngineLambda
+      FunctionName: !Ref LitPoolMatchingEngineLegacyLambda
       Principal: sns.amazonaws.com
-  DarkPoolMatchingEngineLambdaInvokePermission:
+  DarkPoolMatchingEngineLambdaLegacyInvokePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref DarkPoolMatchingEngineLambda
+      FunctionName: !Ref DarkPoolMatchingEngineLegacyLambda
       Principal: sns.amazonaws.com
   AvailableFundsRaiserLegacyLambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
@@ -716,7 +823,7 @@ Resources:
       Action: 'lambda:InvokeFunction'
       FunctionName: !Ref AvailableFundsRaiserLegacyLambda
       Principal: sns.amazonaws.com
-  PostTradeProcessorLambdaLegacyInvokePermission:
+  PostTradeProcessorLegacyLambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
