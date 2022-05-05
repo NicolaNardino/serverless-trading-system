@@ -126,5 +126,5 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 
 ## TODO
 
+- ~~JavaScript to TypeScript conversion.~~
 - Configure local environment and add tests.
-- JavaScript to TypeScript conversion (ongoing).
