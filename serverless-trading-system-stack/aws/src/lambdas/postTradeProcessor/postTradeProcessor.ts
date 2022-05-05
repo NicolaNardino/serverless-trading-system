@@ -1,9 +1,7 @@
 import { EventBridgeEvent } from 'aws-lambda';
 
-// @ts-ignore
-import { delay, ddbDocClient, s3Client, eventBridgeClient } from '/opt/nodejs/src/utils.js';
-// @ts-ignore
-import { randomUUID, PutObjectCommand, PutCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
+import { delay, ddbDocClient, s3Client, eventBridgeClient } from '/opt/nodejs/util/utils.js';
+import { randomUUID, PutObjectCommand, PutCommand, PutEventsCommand } from '../../layers/common/util/dependencies.js';
 
 const tradesStorageBucket = process.env.bucketName;
 const tableName = process.env.tradesStoreTableName;

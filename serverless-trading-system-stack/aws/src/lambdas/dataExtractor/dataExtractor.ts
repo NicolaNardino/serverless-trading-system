@@ -1,9 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 
-// @ts-ignore
-import { GetCommand, QueryCommand } from '/opt/nodejs/src/dependencies.js';
-// @ts-ignore
-import { ddbDocClient } from '/opt/nodejs/src/utils.js';
+import { GetCommand, QueryCommand } from '../../layers/common/util/dependencies.js';
+import { ddbDocClient } from '/opt/nodejs/util/utils.js';
 
 const tableName = process.env.tradesStoreTableName;
 

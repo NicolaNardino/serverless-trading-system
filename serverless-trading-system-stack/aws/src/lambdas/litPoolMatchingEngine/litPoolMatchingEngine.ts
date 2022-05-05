@@ -1,8 +1,6 @@
 import { EventBridgeEvent } from 'aws-lambda';
-// @ts-ignore
-import { matchOrder, getRandomArrayEntry, getRandom, getParameter, eventBridgeClient } from '/opt/nodejs/src/utils.js';
-// @ts-ignore
-import { randomUUID, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
+import { matchOrder, getRandomArrayEntry, getRandom, getParameter, eventBridgeClient } from '/opt/nodejs/util/utils.js';
+import { randomUUID, PutEventsCommand } from '../../layers/common/util/dependencies.js';
 
 const litPools = (await getParameter('/trading-system/dev/lit-pools')).split(',');
 const eventBusName = process.env.eventBusName;
@@ -39,7 +37,7 @@ async function turnOrdersIntoTrades(orders: Order[]) {
             exchange: randomExchange,
             exchangeType: ExchangeType.LitPool,
             fee: randomFee,
-            ...(order.type === Type.Market ? { price: (marketDataServiceURL !== 'xxx' ? (await matchOrder(order, marketDataServiceURL)).matchedPrice : getRandom(100, 200).toFixed(2)) } : {})
+            ...(order.type === Type.Market ? { price: getRandom(100, 200).toFixed(2) } : {})
         };
     }));
 }

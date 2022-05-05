@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import {SmartOrderRouterInvokeUrl, DataExtractorInvokeUrl, ApiKey } from '../sandbox/constants.js' //this is excluded from the git repo.
+import {SmartOrderRouterInvokeUrl, DataExtractorInvokeUrl, ApiKey } from './sandbox/constants.js' //this is excluded from the git repo.
 import { buildRandomOrders, storeCustomersInfo } from './utils.js'
 
 async function getCustomerTrades() {
@@ -12,7 +12,7 @@ async function getCustomerTrades() {
     return await response.json();
 }
 
-async function postOrders(randomOrders, apiUrl, apiKeyRequired = false) {
+async function postOrders(randomOrders: object, apiUrl: string, apiKeyRequired = false) {
     const response = await fetch(apiUrl + 'orders', {
         method: 'POST',
         body: JSON.stringify(randomOrders),
@@ -22,9 +22,9 @@ async function postOrders(randomOrders, apiUrl, apiKeyRequired = false) {
 }
 
 
-
 (async () => {
-    await storeCustomersInfo("TradesStore");
+    //await storeCustomersInfo("TradesStore");
     //console.log(await getCustomerTrades());
-    //console.log(await postOrders(buildRandomOrders(12), SmartOrderRouterInvokeUrl));
+    
+    console.log(await postOrders(buildRandomOrders(7), " https://peo8zsh3zj.execute-api.us-east-1.amazonaws.com/dev/"));
 })();

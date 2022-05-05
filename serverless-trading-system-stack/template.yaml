@@ -451,7 +451,7 @@ Resources:
         Properties:
             LayerName: sam-trading-system-lambda-layer
             Description: Dependencies for sam-trading-system
-            ContentUri: dependencies/
+            ContentUri: aws/dist/layers/common
             CompatibleRuntimes:
               - nodejs14.x
             CompatibleArchitectures:

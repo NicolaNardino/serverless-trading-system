@@ -1,9 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 
-// @ts-ignore
-import { splitBy, publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/src/utils.js';
-// @ts-ignore
-import { randomUUID, GetCommand, PutEventsCommand } from '/opt/nodejs/src/dependencies.js';
+import { splitBy, publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/util/utils.js';
+import { randomUUID, GetCommand, PutEventsCommand } from '../../layers/common/util/dependencies.js';
 
 const paramValues = await getParameters(['/trading-system/dev/dark-pool-tickers-list', '/trading-system/dev/bus-type']);
 const darkPoolTickers = paramValues.get('/trading-system/dev/dark-pool-tickers-list').split(',');
@@ -77,7 +75,7 @@ const creditCheck = async (orders: Order[]) => {
     const validOrders = [];
     const invalidOrders = [];
     for (const order of orders) {
-        const orderPrice = (order.type === Type.Market ? getRandom(100, 200).toFixed(2) : order.price);
+        const orderPrice = (order.type === Type.Market ? getRandom(100, 200) : order.price);
         const potentialTradeValue = (orderPrice * order.quantity);
         //get the remaining funds available to the customer.
         const params = {

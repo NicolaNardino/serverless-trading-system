@@ -1,8 +1,6 @@
 import { EventBridgeEvent } from 'aws-lambda';
-// @ts-ignore
-import { getParameters, s3Client, ddbDocClient } from '/opt/nodejs/src/utils.js';
-// @ts-ignore
-import { fetch, PutObjectCommand, PutCommand } from '/opt/nodejs/src/dependencies.js';
+import { getParameters, s3Client, ddbDocClient } from '/opt/nodejs/util/utils.js';
+import { fetch, PutObjectCommand, PutCommand } from '../../layers/common/util/dependencies.js';
 
 const paramValues = await getParameters(['/trading-system/dev/market-data-api-base-url', '/trading-system/dev/market-data-api-key']);
 const marketDataApiBaseURL = paramValues.get('/trading-system/dev/market-data-api-base-url');

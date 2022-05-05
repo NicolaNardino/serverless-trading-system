@@ -1,8 +1,6 @@
 import { S3Handler } from 'aws-lambda';
-// @ts-ignore
-import { /*ListObjectsCommand, */HeadObjectCommand } from '/opt/nodejs/src/dependencies.js';
-// @ts-ignore
-import { s3Client } from '/opt/nodejs/src/utils.js';
+import { /*ListObjectsCommand, */HeadObjectCommand } from '../../layers/common/util/dependencies.js';
+import { s3Client } from '/opt/nodejs/util/utils.js';
 
 export const handler: S3Handler = async (event) => {
   console.log(JSON.stringify(event));

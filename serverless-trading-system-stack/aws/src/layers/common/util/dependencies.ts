@@ -1,4 +1,4 @@
-import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
+import { SNSClient, PublishCommand, PublishCommandInput, MessageAttributeValue } from "@aws-sdk/client-sns";
 import { S3Client, PutObjectCommand, ListObjectsCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { SSMClient, GetParameterCommand, GetParametersCommand } from "@aws-sdk/client-ssm";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"; 
@@ -8,7 +8,7 @@ import { randomUUID } from 'crypto';
 import fetch from 'node-fetch';
 
 export {
-    SNSClient, PublishCommand,
+    SNSClient, PublishCommand, PublishCommandInput, MessageAttributeValue,
     S3Client, PutObjectCommand, ListObjectsCommand, HeadObjectCommand,
     SSMClient, GetParameterCommand, GetParametersCommand,
     DynamoDBClient, DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand,

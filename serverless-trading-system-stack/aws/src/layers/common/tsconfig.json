@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es2020",
+    "noImplicitAny": true,
+    "preserveConstEnums": true,
+    "rootDir": ".",
+    "outDir": "../../../dist/layers/common/nodejs",
+    "sourceMap": true,
+    "baseUrl": ".",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+  },
+  "include": ["./", "./package.json"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}

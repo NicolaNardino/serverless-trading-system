@@ -1,7 +1,18 @@
-import { ddbDocClient, delay, getRandom, getRandomInteger, getRandomArrayEntry } from '../../serverless-trading-system-stack/dependencies/nodejs/src/utils.js';
-import { PutCommand } from '../../serverless-trading-system-stack/dependencies/nodejs/src/dependencies.js';
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb"; 
+import { DynamoDBDocumentClient, PutCommand} from "@aws-sdk/lib-dynamodb";
 
-function buildRandomOrders(nrOrders) {
+const getRandomInteger = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
+
+const getRandom = (min: number, max: number): number => Math.random() * (max - min) + min;
+
+const getRandomArrayEntry = (array: any[]) => array[Math.floor(Math.random() * array.length)];
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const region = { region: 'us-east-1' };
+const ddbDocClient = DynamoDBDocumentClient.from(new DynamoDBClient(region));
+
+function buildRandomOrders(nrOrders: number) {
     const customers = ['000001', '000002', '000003', '000004', '000005', '000006', '000007', '000008', '000009', '0000010', '0000011', '0000012'];
     const tickers = ['FB', 'AMD', 'AMZN', 'AAPL', 'GOOG', 'NFLX', 'F', 'T', 'MO', 'PFE', 'COIN', 'MRNA', 'ORCL', 'TSLA', 'NVDA', 'MSFT', 'UBSG.SW', 'CSGN.SW', 'HOLN.SW', 'CHSPI.SW', 'EOG', 'PBR', 'PBR-A', 'RBLX', 'CDEV','BABA', 'SPY', 'VTI','VOO','ADBE'];
     const directions = ['Buy', 'Sell'];
@@ -20,7 +31,7 @@ function buildRandomOrders(nrOrders) {
 }
 
 //Customers data initialization.
-async function storeCustomersInfo(tableName) {
+async function storeCustomersInfo(tableName: string) {
     const customers = ['000001', '000002', '000003', '000004', '000005', '000006','000007','000008','000009','0000010', '0000011', '0000012'];
     for (const customerId of customers) {
         try {
@@ -54,5 +65,7 @@ async function storeCustomersInfo(tableName) {
 
   export {
     buildRandomOrders,
-    storeCustomersInfo
+    storeCustomersInfo,
+    delay,
+    ddbDocClient
   }

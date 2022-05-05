@@ -1,9 +1,7 @@
 import { EventBridgeEvent } from 'aws-lambda';
 
-// @ts-ignore
-import { UpdateCommand } from '/opt/nodejs/src/dependencies.js';
-// @ts-ignore
-import { ddbDocClient } from '/opt/nodejs/src/utils.js';
+import { UpdateCommand } from '../../layers/common/util/dependencies.js';
+import { ddbDocClient } from '/opt/nodejs/util/utils.js';
 
 const tradesStoreTableName = process.env.tradesStoreTableName;
 const newFunds = 10000000;
