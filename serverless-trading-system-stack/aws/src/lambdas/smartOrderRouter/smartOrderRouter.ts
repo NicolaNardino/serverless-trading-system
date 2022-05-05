@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 
 import { splitBy, publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/util/utils.js';
-import { randomUUID, GetCommand, PutEventsCommand } from '../../layers/common/util/dependencies.js';
+import { randomUUID, GetCommand, PutEventsCommand } from '/opt/nodejs/util/dependencies.js';
 
 const paramValues = await getParameters(['/trading-system/dev/dark-pool-tickers-list', '/trading-system/dev/bus-type']);
 const darkPoolTickers = paramValues.get('/trading-system/dev/dark-pool-tickers-list').split(',');
