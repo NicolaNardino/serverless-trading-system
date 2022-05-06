@@ -147,7 +147,7 @@ Resources:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       FunctionName: TradesDataAggregator
-      CodeUri: aws/dist/lambdas/tradesDataAggregator/
+      CodeUri: dist/lambdas/tradesDataAggregator/
       Handler: tradesDataAggregator.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -174,7 +174,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: DataExtractor
-      CodeUri: aws/dist/lambdas/dataExtractor/
+      CodeUri: dist/lambdas/dataExtractor/
       Handler: dataExtractor.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -198,7 +198,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: SmartOrderRouter
-      CodeUri: aws/dist/lambdas/smartOrderRouter/
+      CodeUri: dist/lambdas/smartOrderRouter/
       Handler: smartOrderRouter.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -233,7 +233,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: LitPoolMatchingEngine
-      CodeUri: aws/dist/lambdas/litPoolMatchingEngine/
+      CodeUri: dist/lambdas/litPoolMatchingEngine/
       Handler: litPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -253,7 +253,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: LitPoolMatchingEngineLegacy
-      CodeUri: aws/src/lambdas/legacy/litPoolMatchingEngine/
+      CodeUri: src/lambdas/legacy/litPoolMatchingEngine/
       Handler: litPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -275,7 +275,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: DarkPoolMatchingEngine
-      CodeUri: aws/dist/lambdas/darkPoolMatchingEngine/
+      CodeUri: dist/lambdas/darkPoolMatchingEngine/
       Handler: darkPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -295,7 +295,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: DarkPoolMatchingEngineLegacy
-      CodeUri: aws/src/lambdas/legacy/darkPoolMatchingEngine/
+      CodeUri: src/lambdas/legacy/darkPoolMatchingEngine/
       Handler: darkPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -317,7 +317,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: AvailableFundsRaiser
-      CodeUri: aws/dist/lambdas/availableFundsRaiser/
+      CodeUri: dist/lambdas/availableFundsRaiser/
       Handler: availableFundsRaiser.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -334,7 +334,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: AvailableFundsRaiserLegacy
-      CodeUri: aws/src/lambdas/legacy/availableFundsRaiser/
+      CodeUri: src/lambdas/legacy/availableFundsRaiser/
       Handler: availableFundsRaiser.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -355,7 +355,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: PostTradeProcessor
-      CodeUri: aws/dist/lambdas/postTradeProcessor/
+      CodeUri: dist/lambdas/postTradeProcessor/
       Handler: postTradeProcessor.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -378,7 +378,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: PostTradeProcessorLegacy
-      CodeUri: aws/src/lambdas/legacy/postTradeProcessor/
+      CodeUri: src/lambdas/legacy/postTradeProcessor/
       Handler: postTradeProcessor.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -405,7 +405,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: TradesStorageAnalyzer
-      CodeUri: aws/dist/lambdas/tradesStorageAnalyzer/
+      CodeUri: dist/lambdas/tradesStorageAnalyzer/
       Handler: tradesStorageAnalyzer.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -426,7 +426,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: MarketDataManager
-      CodeUri: aws/dist/lambdas/marketDataManager/
+      CodeUri: dist/lambdas/marketDataManager/
       Handler: marketDataManager.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -451,7 +451,7 @@ Resources:
         Properties:
             LayerName: sam-trading-system-lambda-layer
             Description: Dependencies for sam-trading-system
-            ContentUri: aws/dist/layers/common
+            ContentUri: dist/layers/common
             CompatibleRuntimes:
               - nodejs14.x
             CompatibleArchitectures:
