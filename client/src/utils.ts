@@ -1,16 +1,7 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb"; 
-import { DynamoDBDocumentClient, PutCommand} from "@aws-sdk/lib-dynamodb";
+import { DynamoDBClient, DynamoDBDocumentClient, PutCommand } from 'serverless-trading-system-utility-layer/util/dependencies.js'; 
+import {getRandomInteger, getRandom, getRandomArrayEntry, delay} from 'serverless-trading-system-utility-layer/util/utils.js';
 
-const getRandomInteger = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
-
-const getRandom = (min: number, max: number): number => Math.random() * (max - min) + min;
-
-const getRandomArrayEntry = (array: any[]) => array[Math.floor(Math.random() * array.length)];
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const region = { region: 'us-east-1' };
-const ddbDocClient = DynamoDBDocumentClient.from(new DynamoDBClient(region));
+const ddbDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region: 'us-east-1' }));
 
 function buildRandomOrders(nrOrders: number) {
     const customers = ['000001', '000002', '000003', '000004', '000005', '000006', '000007', '000008', '000009', '0000010', '0000011', '0000012'];

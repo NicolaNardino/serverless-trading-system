@@ -1,9 +1,7 @@
 {
   "type": "module",
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.82.0",
-    "@aws-sdk/lib-dynamodb": "^3.82.0",
-    "node-fetch": "^3.2.4"
+    "serverless-trading-system-utility-layer": "^1.0.2"
   },
   "devDependencies": {
     "@types/node": "^17.0.21",

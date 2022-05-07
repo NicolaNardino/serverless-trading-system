@@ -1,5 +1,5 @@
-import fetch from 'node-fetch';
-import {SmartOrderRouterInvokeUrl, DataExtractorInvokeUrl, ApiKey } from './sandbox/constants.js' //this is excluded from the git repo.
+import { fetch } from 'serverless-trading-system-utility-layer/util/dependencies.js';
+import { SmartOrderRouterInvokeUrl, DataExtractorInvokeUrl, ApiKey } from './sandbox/constants.js' //this is excluded from the git repo.
 import { buildRandomOrders, storeCustomersInfo } from './utils.js'
 
 async function getCustomerTrades() {

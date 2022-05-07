@@ -10,7 +10,8 @@
     "baseUrl": ".",
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "declaration": true
   },
-  "include": ["./", "./package.json"],
+  "include": ["./", "./package.json", "./.npmignore"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
