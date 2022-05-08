@@ -1,6 +1,6 @@
 import { EventBridgeEvent } from 'aws-lambda';
 
-import { UpdateCommand } from '../../layers/common/util/dependencies.js';
+import { UpdateCommand } from '/opt/nodejs/util/dependencies.js';
 import { ddbDocClient } from '/opt/nodejs/util/utils.js';
 
 const tradesStoreTableName = process.env.tradesStoreTableName;

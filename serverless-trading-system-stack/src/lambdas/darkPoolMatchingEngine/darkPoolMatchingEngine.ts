@@ -1,7 +1,7 @@
 import { EventBridgeEvent } from 'aws-lambda';
 
-import { matchOrder, getRandomArrayEntry, getRandom, getRandomBoolean, getParameter, eventBridgeClient } from '/opt/nodejs/util/utils.js';
-import { randomUUID, PutEventsCommand } from '../../layers/common/util/dependencies.js';
+import { getRandomArrayEntry, getRandom, getRandomBoolean, getParameter, eventBridgeClient } from '/opt/nodejs/util/utils.js';
+import { randomUUID, PutEventsCommand } from '/opt/nodejs/util/dependencies.js';
 
 const darkPools = (await getParameter('/trading-system/dev/dark-pools')).split(',');
 const eventBusName = process.env.eventBusName;

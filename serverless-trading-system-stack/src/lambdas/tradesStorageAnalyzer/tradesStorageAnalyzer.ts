@@ -1,5 +1,5 @@
 import { S3Handler } from 'aws-lambda';
-import { /*ListObjectsCommand, */HeadObjectCommand } from '../../layers/common/util/dependencies.js';
+import { /*ListObjectsCommand, */HeadObjectCommand } from '/opt/nodejs/util/dependencies.js';
 import { s3Client } from '/opt/nodejs/util/utils.js';
 
 export const handler: S3Handler = async (event) => {

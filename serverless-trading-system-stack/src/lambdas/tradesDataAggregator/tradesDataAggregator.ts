@@ -1,6 +1,6 @@
 import { DynamoDBStreamEvent } from 'aws-lambda';
 import { delay, ddbDocClient } from '/opt/nodejs/util/utils.js';
-import { UpdateCommand } from '../../layers/common/util/dependencies.js';
+import { UpdateCommand } from '/opt/nodejs/util/dependencies.js';
 
 const tableName = process.env.tradesStoreTableName;
 

@@ -1,6 +1,6 @@
 import { EventBridgeEvent } from 'aws-lambda';
-import { matchOrder, getRandomArrayEntry, getRandom, getParameter, eventBridgeClient } from '/opt/nodejs/util/utils.js';
-import { randomUUID, PutEventsCommand } from '../../layers/common/util/dependencies.js';
+import { getRandomArrayEntry, getRandom, getParameter, eventBridgeClient } from '/opt/nodejs/util/utils.js';
+import { randomUUID, PutEventsCommand } from '/opt/nodejs/util/dependencies.js';
 
 const litPools = (await getParameter('/trading-system/dev/lit-pools')).split(',');
 const eventBusName = process.env.eventBusName;
