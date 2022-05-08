@@ -26,5 +26,9 @@ async function postOrders(randomOrders: object, apiUrl: string, apiKeyRequired =
     //await storeCustomersInfo("TradesStore");
     //console.log(await getCustomerTrades());
     
-    console.log(await postOrders(buildRandomOrders(7), " https://peo8zsh3zj.execute-api.us-east-1.amazonaws.com/dev/"));
+    console.log(await postOrders(buildRandomOrders(7), SmartOrderRouterInvokeUrl));
 })();
+
+export {
+    postOrders
+}
