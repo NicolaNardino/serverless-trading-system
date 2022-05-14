@@ -110,7 +110,7 @@ const splitBlockOrders = (orders: Order[], splitSize: number) : Order[] => {
         if (order.quantity <= splitSize)
             splitOrders.push(order);
         else
-            splitBy(order.quantity, splitSize).forEach((orderSplitQuantity: number) => splitOrders.push({ ...order, quantity: orderSplitQuantity, initialQuantity: order.quantity, split: "Yes" }));
+            splitBy(order.quantity, splitSize).forEach((orderSplitQuantity: number) => splitOrders.push({ ...order, quantity: orderSplitQuantity, initialQuantity: order.quantity, split: true }));
     });
     return splitOrders;
 };

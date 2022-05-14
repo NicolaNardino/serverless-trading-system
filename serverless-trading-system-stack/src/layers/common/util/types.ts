@@ -11,8 +11,8 @@ interface Order extends EntryOrder {
     orderId: string;
     orderDate: string;
     initialQuantity?: number;
-    split?: string;
-    notMatchedInDarkPool?: string
+    split?: boolean;
+    notMatchedInDarkPool?: boolean
 };
 
 interface Trade extends Order {

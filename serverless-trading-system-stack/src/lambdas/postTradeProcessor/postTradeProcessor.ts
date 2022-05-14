@@ -68,7 +68,7 @@ async function storeTradesInDynamoDB(trades: Trade[]) {
                 "SettlementDate": new Date().toISOString(),
                 ...(trade.initialQuantity === undefined ? {} : { "InitialQuantity": trade.initialQuantity }),
                 ...(trade.split === undefined ? {} : { "Split": trade.split }),
-                ...(trade.notMatchedInDarkPool === "True" ? { "NotMatchedInDarkPool": trade.notMatchedInDarkPool } : {})
+                ...(trade.notMatchedInDarkPool ? { "NotMatchedInDarkPool": trade.notMatchedInDarkPool } : {})
             }
         };
         //console.log(params);
