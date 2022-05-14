@@ -2,6 +2,7 @@ import { EventBridgeEvent } from 'aws-lambda';
 
 import { delay, ddbDocClient, s3Client, eventBridgeClient } from '/opt/nodejs/util/utils.js';
 import { randomUUID, PutObjectCommand, PutCommand, PutEventsCommand } from '/opt/nodejs/util/dependencies.js';
+import { Trade } from '/opt/nodejs/util/types.js';
 
 const tradesStorageBucket = process.env.bucketName;
 const tableName = process.env.tradesStoreTableName;
@@ -76,29 +77,6 @@ async function storeTradesInDynamoDB(trades: Trade[]) {
     }
     console.log("Trades stored in DynamoDB");
 }
-
-interface Trade {
-    customerId: string;
-    tradeDate: string;
-    ticker: string;
-    direction: Direction;
-    type: Type;
-    quantity: number;
-    price: number;
-    orderId: string;
-    orderDate: string;
-    tradeId: string;
-    exchange: string;
-    exchangeType: string;
-    fee: number;
-    initialQuantity?: number;
-    split?: string;
-    notMatchedInDarkPool: string
-};
-
-enum Direction { Buy, Sell };
-
-enum Type { Market, Limit };
 
 interface Trades {
     trades: Trade[]

@@ -2,10 +2,10 @@ import { EventBridgeEvent } from 'aws-lambda';
 
 import { getRandomArrayEntry, getRandom, getRandomBoolean, getParameter, eventBridgeClient } from '/opt/nodejs/util/utils.js';
 import { randomUUID, PutEventsCommand } from '/opt/nodejs/util/dependencies.js';
+import { Order, ExchangeType, Type } from '/opt/nodejs/util/types.js';
 
 const darkPools = (await getParameter('/trading-system/dev/dark-pools')).split(',');
 const eventBusName = process.env.eventBusName;
-const marketDataServiceURL = process.env.fargateMarketDataServicesBaseURL;
 
 export async function handler(event: EventBridgeEvent<string, Orders>) {
     console.log(JSON.stringify(event));
@@ -47,8 +47,8 @@ async function turnOrdersIntoTradesOrLitPoolsOrders(orders: Order[]) {
                 exchange: getRandomArrayEntry(darkPools),
                 exchangeType: ExchangeType.DarkPool,
                 tradeDate: new Date(),
-                fee: getRandom(0, 1).toFixed(2),
-                ...(order.type === Type.Market ? { price: getRandom(100, 200).toFixed(2) } : {})
+                fee: +getRandom(0, 1).toFixed(2),
+                ...(order.type === Type.Market ? { price: +getRandom(100, 200).toFixed(2) } : {})
             };
         else
             return {
@@ -58,26 +58,6 @@ async function turnOrdersIntoTradesOrLitPoolsOrders(orders: Order[]) {
     }));
 }
 
-interface Order {
-    customerId: string;
-    direction: Direction;
-    ticker: string;
-    type: Type;
-    quantity: number;
-    price: number;
-    orderId: string;
-    orderDate: string;
-    split?: string;
-    initialQuantity?: number;
-    notMatchedInDarkPool?: string;
-};
-
 interface Orders {
     orders: Order[];
 }
-
-enum Direction { Buy, Sell };
-
-enum Type { Market, Limit };
-
-enum ExchangeType { LitPool, DarkPool }

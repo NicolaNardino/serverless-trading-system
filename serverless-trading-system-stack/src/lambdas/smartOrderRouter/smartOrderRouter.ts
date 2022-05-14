@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 
 import { splitBy, publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/util/utils.js';
 import { randomUUID, GetCommand, PutEventsCommand } from '/opt/nodejs/util/dependencies.js';
+import { EntryOrder, Order, Type } from '/opt/nodejs/util/types.js';
 
 const paramValues = await getParameters(['/trading-system/dev/dark-pool-tickers-list', '/trading-system/dev/bus-type']);
 const darkPoolTickers = paramValues.get('/trading-system/dev/dark-pool-tickers-list').split(',');
@@ -13,7 +14,7 @@ const eventBusName = process.env.eventBusName;
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
-        let orders: Order[] = [];
+        let orders: EntryOrder[] = [];
         if (event.body)
             orders = JSON.parse(event.body);
         await requestMarketData(orders);
@@ -40,7 +41,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 }
 
-const requestMarketData = async (orders: Order[]) => {
+const requestMarketData = async (orders: EntryOrder[]) => {
     const distinctTickers = [...new Set(orders.map(o => o.ticker))];
     const step1TickersWithNoMarketData = await Promise.all(distinctTickers.map(async ticker => {
         const params = {
@@ -71,7 +72,7 @@ const requestMarketData = async (orders: Order[]) => {
     }
 }
 
-const creditCheck = async (orders: Order[]) => {
+const creditCheck = async (orders: EntryOrder[]) => {
     const validOrders = [];
     const invalidOrders = [];
     for (const order of orders) {
@@ -97,13 +98,13 @@ const creditCheck = async (orders: Order[]) => {
     return { validOrders: validOrders, invalidOrders: invalidOrders };
 };
 
-const addOrderIdAndDate = (orders: Order[]) => {
+const addOrderIdAndDate = (orders: EntryOrder[]) : Order[] => {
     return orders.map(order => {
-        return { ...order, orderId: randomUUID(), orderDate: new Date() };
+        return { ...order, orderId: randomUUID(), orderDate: new Date().toISOString() };
     });
 };
 
-const splitBlockOrders = (orders: Order[], splitSize: number) => {
+const splitBlockOrders = (orders: Order[], splitSize: number) : Order[] => {
     const splitOrders: Order[] = [];
     orders.forEach(order => {
         if (order.quantity <= splitSize)
@@ -114,7 +115,7 @@ const splitBlockOrders = (orders: Order[], splitSize: number) => {
     return splitOrders;
 };
 
-async function publishToSNSOrEventBridge(invalidOrders: Order[], darkPoolOrders: Order[], litPoolOrders: Order[]) {
+async function publishToSNSOrEventBridge(invalidOrders: EntryOrder[], darkPoolOrders: Order[], litPoolOrders: Order[]) {
     switch (busType) {
         case 'EVENT-BRIDGE':
             const result = await eventBridgeClient.send(new PutEventsCommand({
@@ -147,7 +148,7 @@ async function publishToSNSOrEventBridge(invalidOrders: Order[], darkPoolOrders:
     }
 }
 
-function buildEventBridgeOrders(invalidOrders: Order[], darkPoolOrders: Order[], litPoolOrders: Order[]) {
+function buildEventBridgeOrders(invalidOrders: EntryOrder[], darkPoolOrders: Order[], litPoolOrders: Order[]) {
     const entries: {
         Source: string;
         EventBusName: string;
@@ -190,20 +191,3 @@ function buildEventBridgeOrders(invalidOrders: Order[], darkPoolOrders: Order[],
         });
     return entries;
 }
-
-interface Order {
-    customerId: string;
-    direction: Direction;
-    ticker: string;
-    type: Type;
-    quantity: number;
-    price: number;
-    orderId?: string;
-    orderDate?: Date;
-    initialQuantity?: number;
-    split?: string
-};
-
-enum Direction { Buy, Sell };
-
-enum Type { Market, Limit };
