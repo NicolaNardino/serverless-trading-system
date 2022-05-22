@@ -3,9 +3,12 @@
     "module": "esnext",
     "target": "es2020",
     "strict": true,
-    "outDir": "dist",
+    "outDir": "dist/",
+    "baseUrl": "./",
     "sourceMap": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowJs": true
   },
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
