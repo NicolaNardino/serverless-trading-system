@@ -7,7 +7,3 @@ import { buildRandomOrders, postOrders } from './utils'
     
     console.log(await postOrders(buildRandomOrders(7), SmartOrderRouterInvokeUrl));
 })();
-
-export {
-    postOrders
-}
