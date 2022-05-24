@@ -1,4 +1,4 @@
-import { PublishCommand, PublishCommandInput, MessageAttributeValue, GetParameterCommand, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient, fetch } from "./dependencies.js";
+import { PublishCommand, PublishCommandInput, MessageAttributeValue, GetParameterCommand, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient, fetch } from "./dependencies";
 
 const getRandomInteger = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -37,7 +37,7 @@ async function getParameter(param: string) {
 }
 
 async function getParameters(paramsArray: string[]) {
-    return new Map((await ssmClient.send(new GetParametersCommand({ Names: paramsArray }))).Parameters.map(p => [p.Name, p.Value]));
+    return new Map((await ssmClient.send(new GetParametersCommand({ Names: paramsArray }))).Parameters?.map(p => [p.Name, p.Value]));
 }                                                
 
 async function matchOrder(order: object, apiUrl: string) {

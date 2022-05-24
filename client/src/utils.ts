@@ -1,17 +1,25 @@
-import { DynamoDBClient, DynamoDBDocumentClient, PutCommand } from 'serverless-trading-system-utility-layer/util/dependencies.js'; 
-import {getRandomInteger, getRandom, getRandomArrayEntry, delay} from 'serverless-trading-system-utility-layer/util/utils.js';
-import { fetch } from 'serverless-trading-system-utility-layer/util/dependencies.js';
+import { DynamoDBClient, DynamoDBDocumentClient, PutCommand, fetch } from 'serverless-trading-system-utility-layer/util/dependencies'; 
+import { getRandomInteger, getRandom, getRandomArrayEntry, delay } from 'serverless-trading-system-utility-layer/util/utils';
+import { EntryOrder } from 'serverless-trading-system-utility-layer/util/types';
+
 import { DataExtractorInvokeUrl, ApiKey } from './sandbox/constants' //this is excluded from the git repo.
 
 const ddbDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region: 'us-east-1' }));
 
-async function postOrders(randomOrders: object, apiUrl: string, apiKeyRequired = false) {
+interface PostOrdersReply {
+    message: string;
+    validOrders: EntryOrder[];
+    invalidOrders: EntryOrder[];
+}
+
+async function postOrders(randomOrders: object, apiUrl: string, apiKeyRequired = false) : Promise<PostOrdersReply> {
     const response = await fetch(apiUrl + 'orders', {
         method: 'POST',
         body: JSON.stringify(randomOrders),
         ...(apiKeyRequired ? {headers: {'Content-Type': 'application/json','x-api-key': ApiKey}} : {}),
     });
-    return await response.json();
+    const {message, validOrders, invalidOrders} = await response.json() as any;
+    return { message: message, validOrders:  validOrders, invalidOrders: invalidOrders };
 }
 
 async function getCustomerTrades() {

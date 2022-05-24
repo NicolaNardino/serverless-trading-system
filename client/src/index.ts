@@ -1,5 +1,4 @@
-import { fetch } from 'serverless-trading-system-utility-layer/util/dependencies.js';
-import { SmartOrderRouterInvokeUrl, DataExtractorInvokeUrl, ApiKey } from './sandbox/constants' //this is excluded from the git repo.
+import { SmartOrderRouterInvokeUrl } from './sandbox/constants' //this is excluded from the git repo.
 import { buildRandomOrders, postOrders } from './utils'
 
 (async () => {
