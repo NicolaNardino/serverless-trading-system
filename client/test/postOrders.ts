@@ -1,4 +1,5 @@
-import { buildRandomOrders, postOrders } from "../src/utils";
+import { buildRandomOrders } from "../src/utils";
+import { postOrders } from "../src/clientApi";
 import { SmartOrderRouterInvokeUrl } from '../src/sandbox/constants'
 
 describe("post orders and get reply", () => {
