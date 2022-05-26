@@ -1,7 +1,5 @@
-import { DynamoDBClient, DynamoDBDocumentClient, PutCommand, fetch } from 'serverless-trading-system-utility-layer/util/dependencies'; 
-import { getRandomInteger, getRandom, getRandomArrayEntry, delay } from 'serverless-trading-system-utility-layer/util/utils';
-
-const ddbDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region: 'us-east-1' }));
+import { PutCommand } from 'serverless-trading-system-utility-layer/util/dependencies'; 
+import { getRandomInteger, getRandom, getRandomArrayEntry, delay, ddbDocClient } from 'serverless-trading-system-utility-layer/util/utils';
 
 function buildRandomOrders(nrOrders: number) {
     const customers = ['000001', '000002', '000003', '000004', '000005', '000006', '000007', '000008', '000009', '0000010', '0000011', '0000012'];
