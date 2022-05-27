@@ -1,8 +1,8 @@
-import { getCustomerTrades } from "../src/clientApi";
+import { getCustomerData, getCustomerTrades} from "../src/clientApi";
 
 describe("get customer details and trades", () => {
     it("get customer data", async () => {
-        const result = await getCustomerTrades('customers/000008');
+        const result = await getCustomerData('000008');
         expect(result).toHaveProperty("Details");
         expect(result).toHaveProperty("TotalCommissionPaid");
         expect(result).toHaveProperty("NrTrades");
@@ -11,12 +11,11 @@ describe("get customer details and trades", () => {
     });
 
     it("get customer trades in a given date", async () => {
-        const result = await getCustomerTrades('trades/000008?tradeDate=2022-03-13');
-        //console.log(result);
-        expect((result as any[]).length).toBe(9);
+        const trades = await getCustomerTrades('000008', '2022-03-13');
+        expect(trades.length).toBe(9);
     });
 
     it("no trades for customer", async () => {
-        expect((await getCustomerTrades('trades/noway?tradeDate=2022-03-13') as any[]).length).toBe(0);
+        expect((await getCustomerTrades('nocustomer','2022-03-13')).length).toBe(0);
     });
 });
