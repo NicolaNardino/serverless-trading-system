@@ -24,12 +24,26 @@ interface Trade extends Order {
     fee: number;
 };
 
-enum Direction { Buy, Sell };
+enum Direction { 
+    Buy = "Buy", 
+    Sell = "Sell" 
+};
 
-enum Type { Market, Limit };
+enum Type {
+    Market = "Market",
+    Limit = "Limit"
+};
 
-enum ExchangeType { LitPool, DarkPool }
+enum ExchangeType { 
+    LitPool = "LitPool", 
+    DarkPool = "DarkPool"
+}
 
 export {
-    EntryOrder, Order, Trade, Direction, Type, ExchangeType
+    EntryOrder, 
+    Order, 
+    Trade, 
+    Direction, 
+    Type, 
+    ExchangeType
 }

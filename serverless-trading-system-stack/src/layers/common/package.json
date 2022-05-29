@@ -1,6 +1,6 @@
 {
   "name": "serverless-trading-system-utility-layer",
-  "version": "1.0.3",
+  "version": "1.1.2",
   "description": "Utility layer for serverless-trading-system",
   "author": "Nicola Nardino",
   "license": "MIT",

@@ -8,6 +8,11 @@ const getRandomBoolean = () => Math.random() < 0.5;
 
 const getRandomArrayEntry = (array: any[]) => array[Math.floor(Math.random() * array.length)];
 
+function getRandomEnum<T>(myEnum: T): T[keyof T] {
+    const enumValues = (Object.values(myEnum) as unknown) as T[keyof T][];
+    return enumValues[Math.floor(Math.random() * enumValues.length)];
+}
+
 const getDefaultIfUndefined = (value: any, defaultValue: any) => (value === undefined ? defaultValue : value);
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -61,6 +66,7 @@ export {
     getRandom,
     getRandomBoolean,
     getRandomArrayEntry,
+    getRandomEnum,
     delay,
     publishToSns,
     getParameters, getParameter,
