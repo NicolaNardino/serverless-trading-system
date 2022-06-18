@@ -1,6 +1,7 @@
 import { EventBridgeEvent } from 'aws-lambda';
 import { getParameters, s3Client, ddbDocClient } from '/opt/nodejs/util/utils.js';
 import { fetch, PutObjectCommand, PutCommand } from '/opt/nodejs/util/dependencies.js';
+import { yahooFinance } from '/opt/nodejs/util/dependencies.js';
 
 const paramValues = await getParameters(['/trading-system/dev/market-data-api-base-url', '/trading-system/dev/market-data-api-key']);
 const marketDataApiBaseURL = paramValues.get('/trading-system/dev/market-data-api-base-url');
@@ -15,28 +16,22 @@ export const handler = async (event: EventBridgeEvent<string, MarketDataDetail>)
 };
 
 async function getAndStoreMarketData(tickers: string[]) {
-  await Promise.all(tickers.map(async (ticker) => await storeQuoteSummaryInDyanmoDBAndS3(ticker)));
-  await storeHistoricalDataInS3(tickers);
+  await Promise.all(tickers.map(ticker => storeQuoteSummaryInDyanmoDBAndS3(ticker)));
+  await Promise.all(tickers.map(ticker => storeHistoricalDataInS3(ticker)));
 }
 
-async function storeHistoricalDataInS3(tickers: string[]) {//it'll be enhanced to store data in DynamoDB too.
-//single request to get historical data for a batch of 10 tickers.
-const histDataParams = (new URLSearchParams({ inverval: '1d', range: '5y', symbols: tickers.join(',') })).toString();
-console.log('Hist data params ', marketDataApiBaseURL + 'v8/finance/spark?'+ histDataParams);
-const historicalDataHandle = await fetch(marketDataApiBaseURL + 'v8/finance/spark?'+ histDataParams, {
-  method: 'GET',
-  headers: { 'Content-Type': 'application/json', 'x-api-key': marketDataApiKey }
-});
-const hostoricalDataS3Key = 'marketData/history/' + tickers.join('_');
-const historicalData = await historicalDataHandle.json();
-await s3Client.send(new PutObjectCommand({
-  Bucket: marketDataBucketName,
-  Key: hostoricalDataS3Key,
-  Body: JSON.stringify(historicalData),
-  ContentType: "application/json"
-}));
-console.log("Market data/ hostory for ", tickers.join('_'), "stored in S3 bucket ", marketDataBucketName);
-}
+async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to store data in DynamoDB too.
+  const queryOptions = { period1: '2020-01-01', period2: new Date()};
+  const result = await yahooFinance.historical(ticker, queryOptions);
+
+  await s3Client.send(new PutObjectCommand({
+    Bucket: marketDataBucketName,
+    Key: 'marketData/history/'+ticker,
+    Body: JSON.stringify(result),
+    ContentType: "application/json"
+  }));
+  console.log("Market data/ history for ", ticker, "stored in S3 bucket ", marketDataBucketName);
+  }
 
 async function storeQuoteSummaryInDyanmoDBAndS3(ticker: string) {
   try {

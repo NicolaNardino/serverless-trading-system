@@ -9,6 +9,7 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowJs": true,
+    "resolveJsonModule": true
   },
   "exclude": ["dist", "node_modules", "**/*.spec.ts"]
 }

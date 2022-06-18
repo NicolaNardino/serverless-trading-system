@@ -10,5 +10,5 @@ describe("post orders and get reply", () => {
     expect(result).toHaveProperty("validOrders");
     expect(result).toHaveProperty("invalidOrders");
     expect(result.validOrders.length + result.invalidOrders.length).toBe(nrOrders);
-  });
+  }, 30000);
 });

@@ -6,6 +6,7 @@ import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCom
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
 import { randomUUID } from 'crypto';
 import fetch from 'node-fetch';
+import yahooFinance from "yahoo-finance2";
 
 export {
     SNSClient, PublishCommand, PublishCommandInput, MessageAttributeValue,
@@ -14,5 +15,6 @@ export {
     DynamoDBClient, DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand,
     EventBridgeClient, PutEventsCommand,
     randomUUID,
-    fetch
+    fetch,
+    yahooFinance
 }

@@ -151,7 +151,7 @@ Resources:
       Handler: tradesDataAggregator.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies: 
       # Read more about SAM policy templates here
       # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
@@ -178,7 +178,7 @@ Resources:
       Handler: dataExtractor.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies: 
         - DynamoDBReadPolicy: 
             TableName: !Ref DDBTable
@@ -202,7 +202,7 @@ Resources:
       Handler: smartOrderRouter.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies: 
         - DynamoDBReadPolicy:
             TableName: !Ref DDBTable
@@ -237,7 +237,7 @@ Resources:
       Handler: litPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies: 
         - SSMParameterReadPolicy:
             ParameterName: "*"
@@ -257,7 +257,7 @@ Resources:
       Handler: litPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies: 
         - SSMParameterReadPolicy:
             ParameterName: "*"
@@ -279,7 +279,7 @@ Resources:
       Handler: darkPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies: 
         - SSMParameterReadPolicy:
             ParameterName: "*"
@@ -299,7 +299,7 @@ Resources:
       Handler: darkPoolMatchingEngine.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies: 
         - SSMParameterReadPolicy:
             ParameterName: "*"
@@ -321,7 +321,7 @@ Resources:
       Handler: availableFundsRaiser.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies: 
         - DynamoDBWritePolicy: 
             TableName: !Ref DDBTable
@@ -338,7 +338,7 @@ Resources:
       Handler: availableFundsRaiser.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies: 
         - SSMParameterReadPolicy:
             ParameterName: "*"
@@ -359,7 +359,7 @@ Resources:
       Handler: postTradeProcessor.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies:
         - S3WritePolicy:
             BucketName: !Ref TradesStorageS3BucketName
@@ -382,7 +382,7 @@ Resources:
       Handler: postTradeProcessor.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies:
         - S3WritePolicy:
             BucketName: !Ref TradesStorageS3BucketName
@@ -409,7 +409,7 @@ Resources:
       Handler: tradesStorageAnalyzer.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref TradesStorageS3BucketName
@@ -430,7 +430,7 @@ Resources:
       Handler: marketDataManager.handler
       Layers:
         - !Ref SamTradingSystemLayer
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Policies:
         - S3WritePolicy:
             BucketName: !Ref MarketDataBucket
@@ -453,7 +453,7 @@ Resources:
             Description: Dependencies for sam-trading-system
             ContentUri: dist/layers/common
             CompatibleRuntimes:
-              - nodejs14.x
+              - nodejs16.x
             CompatibleArchitectures:
               - x86_64
             RetentionPolicy: Retain
