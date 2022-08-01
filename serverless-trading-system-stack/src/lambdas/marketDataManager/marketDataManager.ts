@@ -21,17 +21,42 @@ async function getAndStoreMarketData(tickers: string[]) {
 }
 
 async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to store data in DynamoDB too.
-  const queryOptions = { period1: '2020-01-01', period2: new Date()};
-  const result = await yahooFinance.historical(ticker, queryOptions);
+  try {
+    const queryOptions = { period1: '2020-01-01', period2: new Date() };
+    const result = await yahooFinance.historical(ticker, queryOptions);
 
-  await s3Client.send(new PutObjectCommand({
-    Bucket: marketDataBucketName,
-    Key: 'marketData/history/'+ticker,
-    Body: JSON.stringify(result),
-    ContentType: "application/json"
-  }));
-  console.log("Market data/ history for ", ticker, "stored in S3 bucket ", marketDataBucketName);
+    await s3Client.send(new PutObjectCommand({
+      Bucket: marketDataBucketName,
+      Key: 'marketData/history/' + ticker,
+      Body: JSON.stringify(result),
+      ContentType: "application/json"
+    }));
+    console.log("Historical data for ", ticker, "stored in S3 bucket ", marketDataBucketName);
+
+    const trimmedResult = result.slice(0, 5);//temporarily limiting it to 5 items per ticker
+    await Promise.all(trimmedResult.map(async item => {
+      const date = item.date.toISOString().split('T')[0]
+      const params = {
+        TableName: marketDataTableName,
+        Item: {
+          "PK": "TICKER#" + ticker,
+          "SK": "HIST#" + ticker + "#" + date,
+          "Open": item.open,
+          "High": item.high,
+          "Low": item.low,
+          "Close": item.close,
+          "Volume": item.volume,
+          "Updated": Date.now()
+        }
+      };
+      await ddbDocClient.send(new PutCommand(params));
+    }));
+    console.log("Historical market data for ", ticker, "stored in DynamoDB");
   }
+  catch (e) {
+    console.log('Failed to store historical market data for ticker ', ticker, e);
+  }
+}
 
 async function storeQuoteSummaryInDyanmoDBAndS3(ticker: string) {
   try {
