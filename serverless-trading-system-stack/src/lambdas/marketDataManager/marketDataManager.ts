@@ -1,6 +1,6 @@
 import { EventBridgeEvent } from 'aws-lambda';
 import { getParameters, s3Client, ddbDocClient } from '/opt/nodejs/util/utils.js';
-import { fetch, PutObjectCommand, PutCommand } from '/opt/nodejs/util/dependencies.js';
+import { fetch, PutObjectCommand, PutCommand, UpdateCommand } from '/opt/nodejs/util/dependencies.js';
 import { yahooFinance } from '/opt/nodejs/util/dependencies.js';
 
 const paramValues = await getParameters(['/trading-system/dev/market-data-api-base-url', '/trading-system/dev/market-data-api-key']);
@@ -8,7 +8,6 @@ const marketDataApiBaseURL = paramValues.get('/trading-system/dev/market-data-ap
 const marketDataApiKey = paramValues.get('/trading-system/dev/market-data-api-key');
 const marketDataBucketName = process.env.bucketName;
 const marketDataTableName = process.env.marketDataTableName;
-const quoteSummaryModules = 'summaryDetail,assetProfile,fundProfile,financialData,defaultKeyStatistics,calendarEvents,incomeStatementHistory,incomeStatementHistoryQuarterly,cashflowStatementHistory,balanceSheetHistory,earnings,earningsHistory,insiderHolders,cashflowStatementHistory, cashflowStatementHistoryQuarterly,insiderTransactions,secFilings,indexTrend,sectorTrend,earningsTrend,netSharePurchaseActivity,upgradeDowngradeHistory,institutionOwnership,recommendationTrend,balanceSheetHistory,balanceSheetHistoryQuarterly,fundOwnership,majorDirectHolders, majorHoldersBreakdown, price, quoteType, esgScore';
 
 export const handler = async (event: EventBridgeEvent<string, MarketDataDetail>): Promise<void> => {
   console.log(JSON.stringify(event));
@@ -22,7 +21,9 @@ async function getAndStoreMarketData(tickers: string[]) {
 
 async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to store data in DynamoDB too.
   try {
-    const queryOptions = { period1: '2020-01-01', period2: new Date() };
+    const histDataStart = '2020-01-01';
+    const histDataEnd = new Date();
+    const queryOptions = { period1: histDataStart, period2: histDataEnd };
     const result = await yahooFinance.historical(ticker, queryOptions);
 
     await s3Client.send(new PutObjectCommand({
@@ -33,9 +34,8 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
     }));
     console.log("Historical data for ", ticker, "stored in S3 bucket ", marketDataBucketName);
 
-    const trimmedResult = result.slice(0, 5);//temporarily limiting it to 5 items per ticker
-    await Promise.all(trimmedResult.map(async item => {
-      const date = item.date.toISOString().split('T')[0]
+    await Promise.all(result.slice(0, 50).map(async item => {//temporarily limiting it to 50 items per ticker
+      const date = item.date.toISOString().split('T')[0];
       const params = {
         TableName: marketDataTableName,
         Item: {
@@ -52,6 +52,25 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
       await ddbDocClient.send(new PutCommand(params));
     }));
     console.log("Historical market data for ", ticker, "stored in DynamoDB");
+
+    const updateHistDataStartEnd = {
+      TableName: marketDataTableName,
+      Key: {
+        PK: "TICKER#" + ticker,
+        SK: "SUMMARY#" + ticker,
+      },
+      ExpressionAttributeNames: {
+        '#HistDataStart': 'HistDataStart',
+        '#HistDataEnd': 'HistDataEnd',
+      },
+      ExpressionAttributeValues: {
+        ':HistDataStart': histDataStart,
+        ':HistDataEnd': histDataEnd.toISOString().split('T')[0],
+      },
+      UpdateExpression: 'SET #HistDataStart = :HistDataStart, #HistDataEnd = :HistDataEnd'
+    };
+    await ddbDocClient.send(new UpdateCommand(updateHistDataStartEnd));
+    console.log('Historical market data start/ end updated for ', ticker);
   }
   catch (e) {
     console.log('Failed to store historical market data for ticker ', ticker, e);
@@ -60,6 +79,48 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
 
 async function storeQuoteSummaryInDyanmoDBAndS3(ticker: string) {
   try {
+    const result = await yahooFinance.quoteSummary(ticker, { modules: ['defaultKeyStatistics', 'majorHoldersBreakdown'] });
+    const quoteSummaryS3Key = 'marketData/' + ticker + '/quoteSummary';
+    await s3Client.send(new PutObjectCommand({
+      Bucket: marketDataBucketName,
+      Key: quoteSummaryS3Key,
+      Body: JSON.stringify(result),
+      ContentType: "application/json"
+    }));
+    console.log("Market data/ quoteSummary for ", ticker, "stored in S3 bucket ", marketDataBucketName);
+
+    const defaultKeyStatistics = result.defaultKeyStatistics;
+    const majorHoldersBreakdown = result.majorHoldersBreakdown;
+    const params = {
+      TableName: marketDataTableName,
+      Item: {
+        "PK": "TICKER#" + ticker,
+        "SK": "SUMMARY#" + ticker,
+        "QuoteSummaryS3Key": quoteSummaryS3Key,
+        "EnterpriseValue": emptyIfUndefined(defaultKeyStatistics?.enterpriseValue),
+        "ForwardPE": emptyIfUndefined(defaultKeyStatistics?.forwardPE),
+        "ProfitMargins": emptyIfUndefined(defaultKeyStatistics?.profitMargins),
+        "Beta": emptyIfUndefined(defaultKeyStatistics?.beta),
+        "EarningsQuarterlyGrowth": emptyIfUndefined(defaultKeyStatistics?.earningsQuarterlyGrowth),
+        "TrailingEps": emptyIfUndefined(defaultKeyStatistics?.trailingEps),
+        "ForwardEps": emptyIfUndefined(defaultKeyStatistics?.forwardEps),
+        "LastDividendValue": emptyIfUndefined(defaultKeyStatistics?.lastDividendValue),
+        "LastDividendDate": emptyIfUndefined(defaultKeyStatistics?.lastDividendDate?.toISOString().split('T')[0]),
+        "InsidersPercentHeld": emptyIfUndefined(majorHoldersBreakdown?.insidersPercentHeld),
+        "InstitutionsCount": emptyIfUndefined(majorHoldersBreakdown?.institutionsCount),
+        "Updated": Date.now()
+      }
+    }
+    await ddbDocClient.send(new PutCommand(params));
+  }
+  catch (e) {
+    console.log('Failed to store market data quoteSummary for ticker ', ticker, e);
+  }
+}
+
+async function storeQuoteSummaryInDyanmoDBAndS3_drictFromYahooFinanceAPI(ticker: string) {
+  try {
+    const quoteSummaryModules = 'summaryDetail,assetProfile,fundProfile,financialData,defaultKeyStatistics,calendarEvents,incomeStatementHistory,incomeStatementHistoryQuarterly,cashflowStatementHistory,balanceSheetHistory,earnings,earningsHistory,insiderHolders,cashflowStatementHistory, cashflowStatementHistoryQuarterly,insiderTransactions,secFilings,indexTrend,sectorTrend,earningsTrend,netSharePurchaseActivity,upgradeDowngradeHistory,institutionOwnership,recommendationTrend,balanceSheetHistory,balanceSheetHistoryQuarterly,fundOwnership,majorDirectHolders, majorHoldersBreakdown, price, quoteType, esgScore';
     const quoteSummaryHandle = await fetch(marketDataApiBaseURL + 'v11/finance/quoteSummary/' + ticker + '?' + (new URLSearchParams({ modules: quoteSummaryModules })).toString(), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', 'x-api-key': marketDataApiKey }

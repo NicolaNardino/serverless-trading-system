@@ -73,7 +73,7 @@ async function storeTradesInDynamoDB(trades: Trade[]) {
         };
         //console.log(params);
         await ddbDocClient.send(new PutCommand(params));
-        await delay(150);
+        await delay(100);
     }
     console.log("Trades stored in DynamoDB");
 }
