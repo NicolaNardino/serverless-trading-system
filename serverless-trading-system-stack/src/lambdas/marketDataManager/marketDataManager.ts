@@ -1,6 +1,6 @@
 import { EventBridgeEvent } from 'aws-lambda';
 import { getParameters, s3Client, ddbDocClient } from '/opt/nodejs/util/utils.js';
-import { fetch, PutObjectCommand, PutCommand, UpdateCommand } from '/opt/nodejs/util/dependencies.js';
+import { fetch, PutObjectCommand, PutCommand, UpdateCommand, GetCommand } from '/opt/nodejs/util/dependencies.js';
 import { yahooFinance } from '/opt/nodejs/util/dependencies.js';
 
 const paramValues = await getParameters(['/trading-system/dev/market-data-api-base-url', '/trading-system/dev/market-data-api-key']);
@@ -10,11 +10,7 @@ const marketDataBucketName = process.env.bucketName;
 const marketDataTableName = process.env.marketDataTableName;
 
 export const handler = async (event: EventBridgeEvent<string, MarketDataDetail>): Promise<void> => {
-  console.log(JSON.stringify(event));
-  await getAndStoreMarketData(event.detail.tickers);
-};
-
-async function getAndStoreMarketData(tickers: string[]) {
+  const tickers = event.detail.tickers;
   await Promise.all(tickers.map(ticker => storeQuoteSummaryInDyanmoDBAndS3(ticker)));
   await Promise.all(tickers.map(ticker => storeHistoricalDataInS3(ticker)));
 }
@@ -33,14 +29,16 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
       ContentType: "application/json"
     }));
     console.log("Historical data for ", ticker, "stored in S3 bucket ", marketDataBucketName);
-
-    await Promise.all(result.slice(0, 50).map(async item => {//temporarily limiting it to 50 items per ticker
-      const date = item.date.toISOString().split('T')[0];
+    //only update the data past a the current end date (HistDataEnd)
+    const currentHistDataEnd = await getCurrentHistDataEnd(ticker);
+    const filteredResult = (result.filter(item => item.date > currentHistDataEnd));
+    console.log('Current hist data end for ticker', ticker, ' is ', currentHistDataEnd, ', target end', formatDate(histDataEnd), '\nItems to upload:', filteredResult.length);
+    await Promise.all(filteredResult.slice(0, 50).map(async item => {//temporarily limiting it to 50 items per ticker
       const params = {
         TableName: marketDataTableName,
         Item: {
           "PK": "TICKER#" + ticker,
-          "SK": "HIST#" + ticker + "#" + date,
+          "SK": "HIST#" + ticker + "#" + formatDate(item.date),
           "Open": item.open,
           "High": item.high,
           "Low": item.low,
@@ -52,7 +50,6 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
       await ddbDocClient.send(new PutCommand(params));
     }));
     console.log("Historical market data for ", ticker, "stored in DynamoDB");
-
     const updateHistDataStartEnd = {
       TableName: marketDataTableName,
       Key: {
@@ -65,7 +62,7 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
       },
       ExpressionAttributeValues: {
         ':HistDataStart': histDataStart,
-        ':HistDataEnd': histDataEnd.toISOString().split('T')[0],
+        ':HistDataEnd': formatDate(histDataEnd)
       },
       UpdateExpression: 'SET #HistDataStart = :HistDataStart, #HistDataEnd = :HistDataEnd'
     };
@@ -164,6 +161,19 @@ async function storeQuoteSummaryInDyanmoDBAndS3_drictFromYahooFinanceAPI(ticker:
   }
 }
 
+async function getCurrentHistDataEnd(ticker: string) {
+  const params = {
+    TableName: marketDataTableName,
+    Key: {
+      PK: "TICKER#" + ticker,
+      SK: "SUMMARY#" + ticker,
+    },
+    ProjectionExpression: "HistDataEnd"
+  };
+  const result : any = (await ddbDocClient.send(new GetCommand(params))).Item;
+  return result.HistDataEnd;
+}
+
 function emptyIfUndefined(item: any) {
   if (item === undefined)
     return {};
@@ -172,4 +182,8 @@ function emptyIfUndefined(item: any) {
 
 interface MarketDataDetail {
   tickers: string[];
+}
+
+const formatDate = (inputDate: Date) => {
+  return inputDate.toISOString().split('T')[0];
 }

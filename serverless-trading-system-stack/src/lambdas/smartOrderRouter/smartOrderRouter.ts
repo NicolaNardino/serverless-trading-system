@@ -41,7 +41,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 }
 
-const requestMarketData = async (orders: EntryOrder[]) => {
+const requestMarketDataForTickersWithNoSummary = async (orders: EntryOrder[]) => {
     const distinctTickers = [...new Set(orders.map(o => o.ticker))];
     const step1TickersWithNoMarketData = await Promise.all(distinctTickers.map(async ticker => {
         const params = {
@@ -70,6 +70,23 @@ const requestMarketData = async (orders: EntryOrder[]) => {
         }));
         console.log('Sent market data request for ', tickersWithNoMarketData)
     }
+}
+
+const requestMarketData = async (orders: EntryOrder[]) => {
+    const distinctTickers = [...new Set(orders.map(o => o.ticker))];
+    await eventBridgeClient.send(new PutEventsCommand({
+        Entries: [
+            {
+                Source: "SmartOrderRouter",
+                EventBusName: eventBusName,
+                DetailType: "MarketData",
+                Time: new Date(),
+                Detail: JSON.stringify({
+                    tickers: distinctTickers
+                })
+            }]
+    }));
+    console.log('Sent market data request for ', distinctTickers)
 }
 
 const creditCheck = async (orders: EntryOrder[]) => {

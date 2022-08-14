@@ -6,7 +6,7 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 10
+    Timeout: 60
 
 Parameters:
   tradesStoreTableName:
@@ -437,6 +437,8 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: "*"
         - DynamoDBWritePolicy: 
+            TableName: !Ref MarketDataTable
+        - DynamoDBReadPolicy: 
             TableName: !Ref MarketDataTable
       Environment:
         Variables:
