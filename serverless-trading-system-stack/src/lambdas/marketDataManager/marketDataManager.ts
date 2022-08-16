@@ -31,7 +31,7 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
     console.log("Historical data for ", ticker, "stored in S3 bucket ", marketDataBucketName);
     //only update the data past a the current end date (HistDataEnd)
     const currentHistDataEnd = await getCurrentHistDataEnd(ticker);
-    const filteredResult = (result.filter(item => item.date > currentHistDataEnd));
+    const filteredResult = (currentHistDataEnd === undefined ? result : (result.filter(item => item.date > currentHistDataEnd)))
     console.log('Current hist data end for ticker', ticker, ' is ', currentHistDataEnd, ', target end', formatDate(histDataEnd), '\nItems to upload:', filteredResult.length);
     await Promise.all(filteredResult.slice(0, 50).map(async item => {//temporarily limiting it to 50 items per ticker
       const params = {
@@ -88,27 +88,33 @@ async function storeQuoteSummaryInDyanmoDBAndS3(ticker: string) {
 
     const defaultKeyStatistics = result.defaultKeyStatistics;
     const majorHoldersBreakdown = result.majorHoldersBreakdown;
-    const params = {
+    const updateSummaryData = {
       TableName: marketDataTableName,
-      Item: {
-        "PK": "TICKER#" + ticker,
-        "SK": "SUMMARY#" + ticker,
-        "QuoteSummaryS3Key": quoteSummaryS3Key,
-        "EnterpriseValue": emptyIfUndefined(defaultKeyStatistics?.enterpriseValue),
-        "ForwardPE": emptyIfUndefined(defaultKeyStatistics?.forwardPE),
-        "ProfitMargins": emptyIfUndefined(defaultKeyStatistics?.profitMargins),
-        "Beta": emptyIfUndefined(defaultKeyStatistics?.beta),
-        "EarningsQuarterlyGrowth": emptyIfUndefined(defaultKeyStatistics?.earningsQuarterlyGrowth),
-        "TrailingEps": emptyIfUndefined(defaultKeyStatistics?.trailingEps),
-        "ForwardEps": emptyIfUndefined(defaultKeyStatistics?.forwardEps),
-        "LastDividendValue": emptyIfUndefined(defaultKeyStatistics?.lastDividendValue),
-        "LastDividendDate": emptyIfUndefined(defaultKeyStatistics?.lastDividendDate?.toISOString().split('T')[0]),
-        "InsidersPercentHeld": emptyIfUndefined(majorHoldersBreakdown?.insidersPercentHeld),
-        "InstitutionsCount": emptyIfUndefined(majorHoldersBreakdown?.institutionsCount),
-        "Updated": Date.now()
-      }
-    }
-    await ddbDocClient.send(new PutCommand(params));
+      Key: {
+        PK: "TICKER#" + ticker,
+        SK: "SUMMARY#" + ticker,
+      },
+      ExpressionAttributeValues: {
+        ':QuoteSummaryS3Key': quoteSummaryS3Key,
+        ':EnterpriseValue': emptyIfUndefined(defaultKeyStatistics?.enterpriseValue),
+        ":ForwardPE": emptyIfUndefined(defaultKeyStatistics?.forwardPE),
+        ":ProfitMargins": emptyIfUndefined(defaultKeyStatistics?.profitMargins),
+        ":Beta": emptyIfUndefined(defaultKeyStatistics?.beta),
+        ":EarningsQuarterlyGrowth": emptyIfUndefined(defaultKeyStatistics?.earningsQuarterlyGrowth),
+        ":TrailingEps": emptyIfUndefined(defaultKeyStatistics?.trailingEps),
+        ":ForwardEps": emptyIfUndefined(defaultKeyStatistics?.forwardEps),
+        ":LastDividendValue": emptyIfUndefined(defaultKeyStatistics?.lastDividendValue),
+        ":LastDividendDate": emptyIfUndefined(defaultKeyStatistics?.lastDividendDate?.toISOString().split('T')[0]),
+        ":InsidersPercentHeld": emptyIfUndefined(majorHoldersBreakdown?.insidersPercentHeld),
+        ":InstitutionsCount": emptyIfUndefined(majorHoldersBreakdown?.institutionsCount),
+        ":Updated": Date.now()
+      },
+      UpdateExpression: 'SET QuoteSummaryS3Key = :QuoteSummaryS3Key, EnterpriseValue = :EnterpriseValue, ForwardPE = :ForwardPE, ProfitMargins = :ProfitMargins, Beta = :Beta, EarningsQuarterlyGrowth = :EarningsQuarterlyGrowth, TrailingEps = :TrailingEps, '+
+      'ForwardEps = :ForwardEps, LastDividendValue = :LastDividendValue, LastDividendDate = :LastDividendDate, InsidersPercentHeld = :InsidersPercentHeld, InstitutionsCount = :InstitutionsCount, Updated = :Updated'
+    };
+    await ddbDocClient.send(new UpdateCommand(updateSummaryData));
+
+
   }
   catch (e) {
     console.log('Failed to store market data quoteSummary for ticker ', ticker, e);
