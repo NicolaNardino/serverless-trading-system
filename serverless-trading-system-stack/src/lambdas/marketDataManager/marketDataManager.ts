@@ -32,8 +32,8 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
     //only update the data past a the current end date (HistDataEnd)
     const currentHistDataEnd = await getCurrentHistDataEnd(ticker);
     const filteredResult = (currentHistDataEnd === undefined ? result : (result.filter(item => item.date > currentHistDataEnd)))
-    console.log('Current hist data end for ticker', ticker, ' is ', currentHistDataEnd, ', target end', formatDate(histDataEnd), '\nItems to upload:', filteredResult.length);
-    await Promise.all(filteredResult.slice(0, 50).map(async item => {//temporarily limiting it to 50 items per ticker
+    console.log('Current hist data end for ticker', ticker, ' is ', currentHistDataEnd, ', target end', formatDate(histDataEnd), ', Items to upload:', filteredResult.length);
+    await Promise.all(filteredResult.slice(0, 100).map(async item => {//temporarily limiting it to 100 items per ticker
       const params = {
         TableName: marketDataTableName,
         Item: {
@@ -121,53 +121,7 @@ async function storeQuoteSummaryInDyanmoDBAndS3(ticker: string) {
   }
 }
 
-async function storeQuoteSummaryInDyanmoDBAndS3_drictFromYahooFinanceAPI(ticker: string) {
-  try {
-    const quoteSummaryModules = 'summaryDetail,assetProfile,fundProfile,financialData,defaultKeyStatistics,calendarEvents,incomeStatementHistory,incomeStatementHistoryQuarterly,cashflowStatementHistory,balanceSheetHistory,earnings,earningsHistory,insiderHolders,cashflowStatementHistory, cashflowStatementHistoryQuarterly,insiderTransactions,secFilings,indexTrend,sectorTrend,earningsTrend,netSharePurchaseActivity,upgradeDowngradeHistory,institutionOwnership,recommendationTrend,balanceSheetHistory,balanceSheetHistoryQuarterly,fundOwnership,majorDirectHolders, majorHoldersBreakdown, price, quoteType, esgScore';
-    const quoteSummaryHandle = await fetch(marketDataApiBaseURL + 'v11/finance/quoteSummary/' + ticker + '?' + (new URLSearchParams({ modules: quoteSummaryModules })).toString(), {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': marketDataApiKey }
-    });
-    const quoteSummaryS3Key = 'marketData/' + ticker + '/quoteSummary';
-    const quoteSummaryActual: any = await quoteSummaryHandle.json();
-    await s3Client.send(new PutObjectCommand({
-      Bucket: marketDataBucketName,
-      Key: quoteSummaryS3Key,
-      Body: JSON.stringify(quoteSummaryActual),
-      ContentType: "application/json"
-    }));
-    console.log("Market data/ quoteSummary for ", ticker, "stored in S3 bucket ", marketDataBucketName);
-
-    const defaultKeyStatistics = quoteSummaryActual.quoteSummary.result[0].defaultKeyStatistics;
-    const summaryDetail = quoteSummaryActual.quoteSummary.result[0].summaryDetail;
-    const params = {
-      TableName: marketDataTableName,
-      Item: {
-        "PK": "TICKER#" + ticker,
-        "SK": "SUMMARY#" + ticker,
-        "QuoteSummaryS3Key": quoteSummaryS3Key,
-        "EnterpriseValue": emptyIfUndefined(defaultKeyStatistics.enterpriseValue?.raw),
-        "ForwardPE": emptyIfUndefined(defaultKeyStatistics.forwardPE?.raw),
-        "ProfitMargins": emptyIfUndefined(defaultKeyStatistics.profitMargins?.raw),
-        "Beta": emptyIfUndefined(defaultKeyStatistics.beta?.raw),
-        "EarningsQuarterlyGrowth": emptyIfUndefined(defaultKeyStatistics.earningsQuarterlyGrowth?.raw),
-        "TrailingEps": emptyIfUndefined(defaultKeyStatistics.trailingEps?.raw),
-        "ForwardEps": emptyIfUndefined(defaultKeyStatistics.forwardEps?.raw),
-        "LastDividendValue": emptyIfUndefined(defaultKeyStatistics.lastDividendValue?.raw),
-        "LastDividendDate": emptyIfUndefined(defaultKeyStatistics.lastDividendDate),
-        "DividendYield": emptyIfUndefined(summaryDetail.dividendYield.raw),
-        "PayoutRatio": emptyIfUndefined(summaryDetail.payoutRatio.raw),
-        "Updated": Date.now()
-      }
-    };
-    await ddbDocClient.send(new PutCommand(params));
-  }
-  catch (e) {
-    console.log('Failed to store market data quoteSummary for ticker ', ticker, e);
-  }
-}
-
-async function getCurrentHistDataEnd(ticker: string) {
+async function getCurrentHistDataEnd(ticker: string) : Promise<Date | undefined>  {
   const params = {
     TableName: marketDataTableName,
     Key: {
@@ -177,7 +131,7 @@ async function getCurrentHistDataEnd(ticker: string) {
     ProjectionExpression: "HistDataEnd"
   };
   const result : any = (await ddbDocClient.send(new GetCommand(params))).Item;
-  return result.HistDataEnd;
+  return result.HistDataEnd === undefined ? result.HistDataEnd : new Date(result.HistDataEnd)
 }
 
 function emptyIfUndefined(item: any) {
