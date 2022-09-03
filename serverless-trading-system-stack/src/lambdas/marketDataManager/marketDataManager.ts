@@ -1,11 +1,7 @@
 import { EventBridgeEvent } from 'aws-lambda';
-import { getParameters, s3Client, ddbDocClient } from '/opt/nodejs/util/utils.js';
-import { fetch, PutObjectCommand, PutCommand, UpdateCommand, GetCommand } from '/opt/nodejs/util/dependencies.js';
-import { yahooFinance } from '/opt/nodejs/util/dependencies.js';
+import { delay, s3Client, ddbDocClient } from '/opt/nodejs/util/utils.js';
+import { yahooFinance, PutObjectCommand, PutCommand, UpdateCommand, GetCommand } from '/opt/nodejs/util/dependencies.js';
 
-const paramValues = await getParameters(['/trading-system/dev/market-data-api-base-url', '/trading-system/dev/market-data-api-key']);
-const marketDataApiBaseURL = paramValues.get('/trading-system/dev/market-data-api-base-url');
-const marketDataApiKey = paramValues.get('/trading-system/dev/market-data-api-key');
 const marketDataBucketName = process.env.bucketName;
 const marketDataTableName = process.env.marketDataTableName;
 
@@ -21,7 +17,6 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
     const histDataEnd = new Date();
     const queryOptions = { period1: histDataStart, period2: histDataEnd };
     const result = await yahooFinance.historical(ticker, queryOptions);
-
     await s3Client.send(new PutObjectCommand({
       Bucket: marketDataBucketName,
       Key: 'marketData/history/' + ticker,
@@ -32,8 +27,9 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
     //only update the data past a the current end date (HistDataEnd)
     const currentHistDataEnd = await getCurrentHistDataEnd(ticker);
     const filteredResult = (currentHistDataEnd === undefined ? result : (result.filter(item => item.date > currentHistDataEnd)))
-    console.log('Current hist data end for ticker', ticker, ' is ', currentHistDataEnd, ', target end', formatDate(histDataEnd), ', Items to upload:', filteredResult.length);
-    await Promise.all(filteredResult.slice(0, 100).map(async item => {//temporarily limiting it to 100 items per ticker
+    console.log('Current hist data end for ticker', ticker, ' is: ', currentHistDataEnd, ', target end:', formatDate(histDataEnd), ', items to upload:', filteredResult.length);
+
+    await Promise.all(filteredResult.map(async (item, index) => {//waiting every x(=10) writes, not to consume the free tier.
       const params = {
         TableName: marketDataTableName,
         Item: {
@@ -48,6 +44,8 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
         }
       };
       await ddbDocClient.send(new PutCommand(params));
+      if (index % 10 === 0)
+        delay(500);
     }));
     console.log("Historical market data for ", ticker, "stored in DynamoDB");
     const updateHistDataStartEnd = {
