@@ -4,7 +4,7 @@ import { Direction, Type, EntryOrder } from 'serverless-trading-system-utility-l
 
 function buildRandomOrders(nrOrders: number): EntryOrder[] {
     const customers = ['000001', '000002', '000003', '000004', '000005', '000006', '000007', '000008', '000009', '0000010', '0000011', '0000012'];
-    const tickers = ['PM', 'BTI', 'META', 'AMD', 'AMZN', 'AAPL', 'GOOG', 'NFLX', 'F', 'T', 'MO', 'PFE', 'COIN', 'MRNA', 'ORCL', 'TSLA', 'SOPH', 'NVDA', 'MSFT', 'UBSG.SW', 'CSGN.SW', 'HOLN.SW', 'CHSPI.SW', 'EOG', 'PBR', 'PBR-A', 'RBLX', 'CDEV', 'BABA', 'SPY', 'VTI', 'VOO', 'ADBE'];
+    const tickers = ['MMM', 'ABT', 'ACN', 'AKAM', 'GOOGL', 'AXP', 'AEP', 'AON', 'AMAT', 'ATO', 'VTV', 'PM', 'BTI', 'META', 'AMD', 'AMZN', 'AAPL', 'GOOG', 'NFLX', 'F', 'T', 'MO', 'PFE', 'COIN', 'MRNA', 'ORCL', 'TSLA', 'SOPH', 'NVDA', 'MSFT', 'UBSG.SW', 'CSGN.SW', 'HOLN.SW', 'CHSPI.SW', 'EOG', 'PBR', 'PBR-A', 'RBLX', 'CDEV', 'BABA', 'SPY', 'VTI', 'VOO', 'ADBE'];
     return [...Array(nrOrders)].map((_, i) => {
         const randomType = getRandomEnum(Type);
         return {
