@@ -12,7 +12,7 @@ The code layer had initially been built with Javascript ES6, and later migrated 
 
 ## Software Architecture
 
-![main-arch-with-event-bridge (2)](https://user-images.githubusercontent.com/8766989/164071527-99500788-fc23-49f3-a8f1-ac2118539f8e.jpg)
+![ArchWithStepFunctions](https://user-images.githubusercontent.com/8766989/194772107-8da371a1-cc22-42ca-a48f-030de36312a5.jpg)
 
 Initially, it was designed with SNS as message bus, then replaced with EventBridge. The application is able to work with both message buses, in fact, it's possible to switch between them by the means of a AWS Systems Manager Parameter Store param, /serverless-trading-system/dev/bus-type, whose values can be SNS or EVENT-BRIDGE. For straight pub/ sub use cases, the EventBridge client/ service programming model matches almost 1:1 the SNS one, for instance: 
 
