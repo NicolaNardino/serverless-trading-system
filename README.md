@@ -6,7 +6,7 @@ It's a generalization of my previous project, [TradingMachine](https://github.co
 
 Main technologies used:
 - Node.js, TypeScript.
-- AWS: Lambda & Lambda Layers, API Gateway, EventBridge, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store. Configuration and deployment of all resources by a SAM template.
+- AWS: Lambda & Lambda Layers, Step Functions, API Gateway, EventBridge, SNS, DynamoDB & DynamoDB Streams, S3, Parameter Store. Configuration and deployment of all resources by a SAM template.
 
 The code layer had initially been built with Javascript ES6, and later migrated to TypeScript. The left-over JavaScript ES6 code, containing some features not migrated to TypeScript, is within the folder serverless-trading-system-stack/src/lambdas/legacy.
 
