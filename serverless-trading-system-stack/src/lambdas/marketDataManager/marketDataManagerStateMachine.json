@@ -1,0 +1,66 @@
+{
+    "Comment": "Market data manager",
+    "StartAt": "Parallel",
+    "States": {
+      "Parallel": {
+        "Type": "Parallel",
+        "End": true,
+        "Branches": [
+          {
+            "StartAt": "MarketDataManagerQuoteSummary",
+            "States": {
+              "MarketDataManagerQuoteSummary": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "OutputPath": "$.Payload",
+                "Parameters": {
+                  "Payload.$": "$",
+                  "FunctionName": "${MarketDataManagerLambdaQuoteSummary}"
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "Lambda.ServiceException",
+                      "Lambda.AWSLambdaException",
+                      "Lambda.SdkClientException"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 6,
+                    "BackoffRate": 2
+                  }
+                ],
+                "End": true
+              }
+            }
+          },
+          {
+            "StartAt": "MarketDataManagerHistoricalData",
+            "States": {
+              "MarketDataManagerHistoricalData": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "OutputPath": "$.Payload",
+                "Parameters": {
+                  "Payload.$": "$",
+                  "FunctionName": "${MarketDataManagerLambdaHistoricalData}"
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "Lambda.ServiceException",
+                      "Lambda.AWSLambdaException",
+                      "Lambda.SdkClientException"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 6,
+                    "BackoffRate": 2
+                  }
+                ],
+                "End": true
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
