@@ -1,15 +1,7 @@
-import { EventBridgeEvent } from 'aws-lambda';
 import { delay, s3Client, ddbDocClient } from '/opt/nodejs/util/utils.js';
 import { yahooFinance, PutObjectCommand, PutCommand, UpdateCommand, GetCommand } from '/opt/nodejs/util/dependencies.js';
 
-const marketDataBucketName = process.env.bucketName;
-const marketDataTableName = process.env.marketDataTableName;
-
-export const handler = async (event: EventBridgeEvent<string, MarketDataDetail>): Promise<void> => {
-  await Promise.all(event.detail.tickers.map(ticker => storeHistoricalDataInS3(ticker)));
-}
-
-async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to store data in DynamoDB too.
+export async function storeHistoricalDataInS3(ticker: string, marketDataBucketName: string, marketDataTableName: string) {
   try {
     const histDataStart = '2020-01-01';
     const histDataEnd = new Date();
@@ -22,7 +14,7 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
       ContentType: "application/json"
     }));
     console.log("Historical data for ", ticker, "stored in S3 bucket ", marketDataBucketName);
-    const currentHistDataEnd = await getCurrentHistDataEnd(ticker);
+    const currentHistDataEnd = await getCurrentHistDataEnd(ticker, marketDataTableName);
     const filteredResult = (currentHistDataEnd === undefined ? result : (result.filter(item => item.date > currentHistDataEnd)))
     console.log('Current hist data end for ticker', ticker, ' is: ', currentHistDataEnd, ', target end:', formatDate(histDataEnd), ', items to upload:', filteredResult.length);
 
@@ -69,7 +61,7 @@ async function storeHistoricalDataInS3(ticker: string) {//it'll be enhanced to s
   }
 }
 
-async function getCurrentHistDataEnd(ticker: string) : Promise<Date | undefined>  {
+async function getCurrentHistDataEnd(ticker: string, marketDataTableName: string) : Promise<Date | undefined>  {
   const params = {
     TableName: marketDataTableName,
     Key: {
@@ -80,10 +72,6 @@ async function getCurrentHistDataEnd(ticker: string) : Promise<Date | undefined>
   };
   const result : any = (await ddbDocClient.send(new GetCommand(params))).Item;
   return result.HistDataEnd === undefined ? result.HistDataEnd : new Date(result.HistDataEnd)
-}
-
-interface MarketDataDetail {
-  tickers: string[];
 }
 
 const formatDate = (inputDate: Date) => {

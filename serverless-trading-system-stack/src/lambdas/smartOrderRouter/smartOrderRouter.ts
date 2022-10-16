@@ -8,7 +8,6 @@ const paramValues = await getParameters(['/trading-system/dev/dark-pool-tickers-
 const darkPoolTickers = paramValues.get('/trading-system/dev/dark-pool-tickers-list').split(',');
 const busType = paramValues.get('/trading-system/dev/bus-type'); //SNS or EventBridge
 const tradesStoreTableName = process.env.tradesStoreTableName;
-const marketDataTableName = process.env.marketDataTableName;
 const ordersDispatcherTopicArn = process.env.ordersDispatcherTopicArn;
 const eventBusName = process.env.eventBusName;
 

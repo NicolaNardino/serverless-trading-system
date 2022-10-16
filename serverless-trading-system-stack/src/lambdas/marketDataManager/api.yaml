@@ -1,0 +1,30 @@
+openapi: "3.0.1"
+info:
+  title: "MarketDataManagerStepFunctionApi"
+paths:
+  /:
+    post:
+      responses:
+        default:
+          description: "none"
+      x-amazon-apigateway-integration:
+        integrationSubtype: "StepFunctions-StartExecution"
+        credentials:
+          Fn::GetAtt: [ApiGatewayMarketDataManagerStartExecutionRole, Arn]
+        requestParameters:
+          Input: "$request.body"
+          StateMachineArn: 
+            Fn::GetAtt: [MarketDataManagerParallelStateMachine, Arn] 
+        payloadFormatVersion: "1.0"
+        type: "aws_proxy"
+        connectionType: "INTERNET"
+x-amazon-apigateway-cors:
+  allowMethods:
+  - "POST"
+  allowHeaders:
+  - "content-type"
+  maxAge: 0
+  allowCredentials: false
+  allowOrigins:
+  - "*"
+x-amazon-apigateway-importexport-version: "1.0"

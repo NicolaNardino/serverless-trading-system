@@ -57,9 +57,7 @@ async function storeQuoteSummaryInDyanmoDBAndS3(ticker: string) {
 }
 
 function emptyIfUndefined(item: any) {
-  if (item === undefined)
-    return {};
-  return item;
+  return (item === undefined ? {} : item);
 }
 
 interface MarketDataDetail {

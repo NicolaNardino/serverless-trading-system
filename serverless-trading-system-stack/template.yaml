@@ -84,6 +84,14 @@ Resources:
     Properties:
       StageName: dev
       Name: SmartOrderRouterAPI
+  MarketDataManagerAPIDeployment:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: 'src/lambdas/marketDataManager/api.yaml'
 
   DDBTable:
     Type: AWS::DynamoDB::Table
@@ -421,32 +429,6 @@ Resources:
             Events: s3:ObjectCreated:*
       Architectures:
         - x86_64
-  
-  MarketDataManagerLambda:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      FunctionName: MarketDataManager
-      CodeUri: dist/lambdas/marketDataManager/
-      Handler: marketDataManager.handler
-      Layers:
-        - !Ref SamTradingSystemLayer
-      Runtime: nodejs16.x
-      Policies:
-        - S3WritePolicy:
-            BucketName: !Ref MarketDataBucket
-        - SSMParameterReadPolicy:
-            ParameterName: "*"
-        - DynamoDBWritePolicy: 
-            TableName: !Ref MarketDataTable
-        - DynamoDBReadPolicy: 
-            TableName: !Ref MarketDataTable
-      Environment:
-        Variables:
-          bucketName: !Ref MarketDataS3BucketName
-          eventBusName: !Ref EventBus
-          marketDataTableName: !Ref MarketDataTable
-      Architectures:
-        - x86_64
   MarketDataManagerLambdaQuoteSummary:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -462,8 +444,6 @@ Resources:
         - SSMParameterReadPolicy:
             ParameterName: "*"
         - DynamoDBWritePolicy: 
-            TableName: !Ref MarketDataTable
-        - DynamoDBReadPolicy: 
             TableName: !Ref MarketDataTable
       Environment:
         Variables:
@@ -497,7 +477,32 @@ Resources:
           marketDataTableName: !Ref MarketDataTable
       Architectures:
         - x86_64
-
+  MarketDataManagerParallelLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: MarketDataManagerParallel
+      CodeUri: dist/lambdas/marketDataManager/
+      Handler: marketDataManagerParallel.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs16.x
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref MarketDataBucket
+        - SSMParameterReadPolicy:
+            ParameterName: "*"
+        - DynamoDBWritePolicy: 
+            TableName: !Ref MarketDataTable
+        - DynamoDBReadPolicy: 
+            TableName: !Ref MarketDataTable
+      Environment:
+        Variables:
+          bucketName: !Ref MarketDataS3BucketName
+          eventBusName: !Ref EventBus
+          marketDataTableName: !Ref MarketDataTable
+      Architectures:
+        - x86_64
+        
   SamTradingSystemLayer:
         Type: AWS::Serverless::LayerVersion
         Properties:
@@ -735,26 +740,6 @@ Resources:
           Id: "PostTradeProcessorLegacyTarget"
           InputPath: "$.detail.trades"
 
-  MarketDataManagerRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Name: MarketDataManager
-      Description: Receives market data requests, call the market data provider and store the outcome in DynamoDB and S3.
-      EventBusName: !Ref EventBus
-      EventPattern: 
-        source: 
-          - "SmartOrderRouter"
-        detail-type:
-          - MarketData
-      State: "ENABLED"
-      Targets: 
-        - 
-          Arn: 
-            Fn::GetAtt: 
-              - "MarketDataManagerLambda"
-              - "Arn"
-          Id: "MarketDataManagerTarget"
-
   # Provide permission for EventBridge to invoke the Lambda function
   LitPoolMatchingEngineLambdaEventsInvokePermission: 
     Type: AWS::Lambda::Permission
@@ -844,18 +829,6 @@ Resources:
         Fn::GetAtt: 
           - "PostTradeProcessorLegacyRule"
           - "Arn"
-  MarketDataManagerLambdaEventsInvokePermission: 
-    Type: AWS::Lambda::Permission
-    Properties: 
-      FunctionName: 
-        Ref: "MarketDataManagerLambda"
-      Action: "lambda:InvokeFunction"
-      Principal: "events.amazonaws.com"
-      SourceArn: 
-        Fn::GetAtt: 
-          - "MarketDataManagerRule"
-          - "Arn"
-
   # Provide permission for SNS to invoke the Lambda function
   LitPoolMatchingEngineLegacyLambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
@@ -882,7 +855,8 @@ Resources:
       FunctionName: !Ref PostTradeProcessorLegacyLambda
       Principal: sns.amazonaws.com
   
-  # Market Data Manager Step Function
+  # Step Functions
+  # Market Data Manager used within the order management workflow
   MarketDataManagerStateMachineExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -916,7 +890,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: "/aws/states/MarketDataManagerStateMachineLogGroup"
-              
+
   MarketDataManagerStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -935,7 +909,7 @@ Resources:
         Level: "ALL"
       Type: "STANDARD"
       Name: "MarketDataManagerStateMachine"
-  
+
   MarketDataManagerStateMachineEventRuleExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -978,6 +952,79 @@ Resources:
               - "Arn"
           Id: "MarketDataManagerStateMachineTarget"
           RoleArn: !GetAtt MarketDataManagerStateMachineEventRuleExecutionRole.Arn
+  
+  # Market data manager used called from API Gateway
+  MarketDataManagerParallelStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: src/lambdas/marketDataManager/marketDataManagerParallelStateMachine.json
+      DefinitionSubstitutions:
+        MarketDataManagerParallelLambda: !GetAtt MarketDataManagerParallelLambda.Arn
+      Tracing:
+        Enabled: true
+      Role: !GetAtt MarketDataManagerParallelStateMachineExecutionRole.Arn
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt  LogGroupMarketDataManagerParallelStateMachine.Arn
+        IncludeExecutionData: TRUE
+        Level: "ALL"
+      Type: "STANDARD"
+      Name: "MarketDataManagerParallelStateMachine"
+
+  MarketDataManagerParallelStateMachineExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - states.amazonaws.com
+                - lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: StatesExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource: 
+                  - !GetAtt MarketDataManagerParallelLambda.Arn
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: "*"
+
+  ApiGatewayMarketDataManagerStartExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - apigateway.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+      - PolicyName: ApiGatewayMarketDataManagerStartExecution
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: "states:StartExecution"
+              Resource: !GetAtt MarketDataManagerParallelStateMachine.Arn
+
+  LogGroupMarketDataManagerParallelStateMachine:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: "/aws/states/MarketDataManagerParallelStateMachineLogGroup"
 
 Outputs:
   OrdersDispatcherTopicARN:
