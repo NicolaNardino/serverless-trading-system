@@ -91,7 +91,7 @@ Resources:
         'Fn::Transform':
           Name: 'AWS::Include'
           Parameters:
-            Location: 'src/lambdas/marketDataManager/api.yaml'
+            Location: 'src/lambdas/marketDataManagerParallel/marketDataManagerOpenAPI.yaml'
 
   DDBTable:
     Type: AWS::DynamoDB::Table
@@ -481,7 +481,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: MarketDataManagerParallel
-      CodeUri: dist/lambdas/marketDataManager/
+      CodeUri: dist/lambdas/marketDataManagerParallel/
       Handler: marketDataManagerParallel.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -957,7 +957,7 @@ Resources:
   MarketDataManagerParallelStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      DefinitionUri: src/lambdas/marketDataManager/marketDataManagerParallelStateMachine.json
+      DefinitionUri: src/lambdas/marketDataManagerParallel/marketDataManagerParallelStateMachine.json
       DefinitionSubstitutions:
         MarketDataManagerParallelLambda: !GetAtt MarketDataManagerParallelLambda.Arn
       Tracing:
