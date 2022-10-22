@@ -91,7 +91,7 @@ Resources:
         'Fn::Transform':
           Name: 'AWS::Include'
           Parameters:
-            Location: 'src/lambdas/marketDataManagerParallel/marketDataManagerOpenAPI.yaml'
+            Location: 'src/resources/various/marketDataManagerOpenAPI.yaml'
 
   DDBTable:
     Type: AWS::DynamoDB::Table
@@ -433,7 +433,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: MarketDataManagerQuoteSummary
-      CodeUri: dist/lambdas/marketDataManager/
+      CodeUri: dist/lambdas/marketDataManagerQuoteSummary/
       Handler: marketDataManagerQuoteSummary.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -456,7 +456,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       FunctionName: MarketDataManagerHistoricalData
-      CodeUri: dist/lambdas/marketDataManager/
+      CodeUri: dist/lambdas/marketDataManagerHistoricalData/
       Handler: marketDataManagerHistoricalData.handler
       Layers:
         - !Ref SamTradingSystemLayer
@@ -475,6 +475,17 @@ Resources:
           bucketName: !Ref MarketDataS3BucketName
           eventBusName: !Ref EventBus
           marketDataTableName: !Ref MarketDataTable
+      Architectures:
+        - x86_64
+  MarketDataManagerPostMapStateLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: MarketDataManagerPostMapState
+      CodeUri: dist/lambdas/marketDataManagerPostMapState/
+      Handler: marketDataManagerPostMapState.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs16.x
       Architectures:
         - x86_64
   MarketDataManagerParallelLambda:
@@ -894,7 +905,7 @@ Resources:
   MarketDataManagerStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      DefinitionUri: src/lambdas/marketDataManager/marketDataManagerStateMachine.json
+      DefinitionUri: src/resources/stateMachines/marketDataManagerStateMachine.json
       DefinitionSubstitutions:
         MarketDataManagerLambdaQuoteSummary: !GetAtt MarketDataManagerLambdaQuoteSummary.Arn
         MarketDataManagerLambdaHistoricalData: !GetAtt MarketDataManagerLambdaHistoricalData.Arn
@@ -957,9 +968,10 @@ Resources:
   MarketDataManagerParallelStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
-      DefinitionUri: src/lambdas/marketDataManagerParallel/marketDataManagerParallelStateMachine.json
+      DefinitionUri: src/resources/stateMachines/marketDataManagerParallelStateMachine.json
       DefinitionSubstitutions:
         MarketDataManagerParallelLambda: !GetAtt MarketDataManagerParallelLambda.Arn
+        MarketDataManagerPostMapStateLambda: !GetAtt MarketDataManagerPostMapStateLambda.Arn
       Tracing:
         Enabled: true
       Role: !GetAtt MarketDataManagerParallelStateMachineExecutionRole.Arn
@@ -995,6 +1007,7 @@ Resources:
                   - "lambda:InvokeFunction"
                 Resource: 
                   - !GetAtt MarketDataManagerParallelLambda.Arn
+                  - !GetAtt MarketDataManagerPostMapStateLambda.Arn
               - Effect: Allow
                 Action:
                   - logs:*

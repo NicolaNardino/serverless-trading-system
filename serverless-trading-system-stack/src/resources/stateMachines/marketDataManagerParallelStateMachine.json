@@ -1,0 +1,35 @@
+{
+  "Comment": "Market data manager parallel",
+  "StartAt": "ParallelMarketData",
+  "States": {
+    "ParallelMarketData": {
+      "Type": "Map",
+      "InputPath": "$.detail",
+      "ItemsPath": "$.tickers",
+      "MaxConcurrency": 0,
+      "Iterator": {
+        "StartAt": "GetMarketData",
+        "States": {
+          "GetMarketData": {
+            "Type": "Task",
+            "Resource": "${MarketDataManagerParallelLambda}",
+            "End": true
+          }
+        }
+      },
+      "ResultPath": "$.detail.tickers",
+      "OutputPath": "$.detail",
+      "Next": "MarketDataManagerPostMapState"
+    },
+    "MarketDataManagerPostMapState": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${MarketDataManagerPostMapStateLambda}"
+      },
+      "End": true
+    }
+  }
+}
