@@ -1,21 +1,21 @@
 {
-    "Comment": "Market data manager",
-    "StartAt": "Parallel",
+    "Comment": "Market Data Manager",
+    "StartAt": "Retrieve quote summay and historical data in parallel",
     "States": {
       "Parallel": {
         "Type": "Parallel",
         "End": true,
         "Branches": [
           {
-            "StartAt": "MarketDataManagerQuoteSummary",
+            "StartAt": "QuoteSummaryManager",
             "States": {
-              "MarketDataManagerQuoteSummary": {
+              "QuoteSummaryManager": {
                 "Type": "Task",
                 "Resource": "arn:aws:states:::lambda:invoke",
                 "OutputPath": "$.Payload",
                 "Parameters": {
                   "Payload.$": "$",
-                  "FunctionName": "${MarketDataManagerLambdaQuoteSummary}"
+                  "FunctionName": "${QuoteSummaryManagerLambda}"
                 },
                 "Retry": [
                   {
@@ -34,15 +34,15 @@
             }
           },
           {
-            "StartAt": "MarketDataManagerHistoricalData",
+            "StartAt": "HistoricalDataManager",
             "States": {
-              "MarketDataManagerHistoricalData": {
+              "HistoricalDataManager": {
                 "Type": "Task",
                 "Resource": "arn:aws:states:::lambda:invoke",
                 "OutputPath": "$.Payload",
                 "Parameters": {
                   "Payload.$": "$",
-                  "FunctionName": "${MarketDataManagerLambdaHistoricalData}"
+                  "FunctionName": "${HistoricalDataManagerLambda}"
                 },
                 "Retry": [
                   {

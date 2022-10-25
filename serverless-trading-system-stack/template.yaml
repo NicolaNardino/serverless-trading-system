@@ -429,12 +429,12 @@ Resources:
             Events: s3:ObjectCreated:*
       Architectures:
         - x86_64
-  MarketDataManagerLambdaQuoteSummary:
+  QuoteSummaryManagerLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: MarketDataManagerQuoteSummary
-      CodeUri: dist/lambdas/marketDataManagerQuoteSummary/
-      Handler: marketDataManagerQuoteSummary.handler
+      FunctionName: QuoteSummaryManager
+      CodeUri: dist/lambdas/marketData/quoteSummaryManager/
+      Handler: quoteSummaryManager.handler
       Layers:
         - !Ref SamTradingSystemLayer
       Runtime: nodejs16.x
@@ -452,12 +452,12 @@ Resources:
           marketDataTableName: !Ref MarketDataTable
       Architectures:
         - x86_64
-  MarketDataManagerLambdaHistoricalData:
+  HistoricalDataManagerLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: MarketDataManagerHistoricalData
-      CodeUri: dist/lambdas/marketDataManagerHistoricalData/
-      Handler: marketDataManagerHistoricalData.handler
+      FunctionName: HistoricalDataManager
+      CodeUri: dist/lambdas/marketData/historicalDataManager/
+      Handler: historicalDataManager.handler
       Layers:
         - !Ref SamTradingSystemLayer
       Runtime: nodejs16.x
@@ -477,23 +477,23 @@ Resources:
           marketDataTableName: !Ref MarketDataTable
       Architectures:
         - x86_64
-  MarketDataManagerPostMapStateLambda:
+  DetermineIfDataRetrievedPostMapStateLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: MarketDataManagerPostMapState
-      CodeUri: dist/lambdas/marketDataManagerPostMapState/
-      Handler: marketDataManagerPostMapState.handler
+      FunctionName: DetermineIfDataRetrievedPostMapState
+      CodeUri: dist/lambdas/marketData/determineIfDataRetrievedPostMapState/
+      Handler: determineIfDataRetrievedPostMapState.handler
       Layers:
         - !Ref SamTradingSystemLayer
       Runtime: nodejs16.x
       Architectures:
         - x86_64
-  MarketDataManagerParallelLambda:
+  HistoricalDataAndQuoteSummaryManagerLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: MarketDataManagerParallel
-      CodeUri: dist/lambdas/marketDataManagerParallel/
-      Handler: marketDataManagerParallel.handler
+      FunctionName: HistoricalDataAndQuoteSummaryManager
+      CodeUri: dist/lambdas/marketData/historicalDataAndQuoteSummaryManager/
+      Handler: historicalDataAndQuoteSummaryManager.handler
       Layers:
         - !Ref SamTradingSystemLayer
       Runtime: nodejs16.x
@@ -890,8 +890,8 @@ Resources:
                 Action:
                   - "lambda:InvokeFunction"
                 Resource: 
-                  - !GetAtt MarketDataManagerLambdaQuoteSummary.Arn
-                  - !GetAtt MarketDataManagerLambdaHistoricalData.Arn
+                  - !GetAtt QuoteSummaryManagerLambda.Arn
+                  - !GetAtt HistoricalDataManagerLambda.Arn
               - Effect: Allow
                 Action:
                   - logs:*
@@ -907,8 +907,8 @@ Resources:
     Properties:
       DefinitionUri: src/resources/stateMachines/marketDataManagerStateMachine.json
       DefinitionSubstitutions:
-        MarketDataManagerLambdaQuoteSummary: !GetAtt MarketDataManagerLambdaQuoteSummary.Arn
-        MarketDataManagerLambdaHistoricalData: !GetAtt MarketDataManagerLambdaHistoricalData.Arn
+        QuoteSummaryManagerLambda: !GetAtt QuoteSummaryManagerLambda.Arn
+        HistoricalDataManagerLambda: !GetAtt HistoricalDataManagerLambda.Arn
       Tracing:
         Enabled: true
       Role: !GetAtt MarketDataManagerStateMachineExecutionRole.Arn
@@ -970,8 +970,8 @@ Resources:
     Properties:
       DefinitionUri: src/resources/stateMachines/marketDataManagerParallelStateMachine.json
       DefinitionSubstitutions:
-        MarketDataManagerParallelLambda: !GetAtt MarketDataManagerParallelLambda.Arn
-        MarketDataManagerPostMapStateLambda: !GetAtt MarketDataManagerPostMapStateLambda.Arn
+        HistoricalDataAndQuoteSummaryManagerLambda: !GetAtt HistoricalDataAndQuoteSummaryManagerLambda.Arn
+        DetermineIfDataRetrievedPostMapStateLambda: !GetAtt DetermineIfDataRetrievedPostMapStateLambda.Arn
       Tracing:
         Enabled: true
       Role: !GetAtt MarketDataManagerParallelStateMachineExecutionRole.Arn
@@ -1006,8 +1006,8 @@ Resources:
                 Action:
                   - "lambda:InvokeFunction"
                 Resource: 
-                  - !GetAtt MarketDataManagerParallelLambda.Arn
-                  - !GetAtt MarketDataManagerPostMapStateLambda.Arn
+                  - !GetAtt HistoricalDataAndQuoteSummaryManagerLambda.Arn
+                  - !GetAtt DetermineIfDataRetrievedPostMapStateLambda.Arn
               - Effect: Allow
                 Action:
                   - logs:*

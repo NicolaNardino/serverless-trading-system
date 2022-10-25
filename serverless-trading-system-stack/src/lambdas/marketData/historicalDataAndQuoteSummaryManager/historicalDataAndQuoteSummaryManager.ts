@@ -3,6 +3,9 @@ import { getAndstoreHistoricalData, getAndstoreQuoteSummary } from '/opt/nodejs/
 const marketDataBucketName = process.env.bucketName;
 const marketDataTableName = process.env.marketDataTableName;
 
+/**
+ * This is meant to be used in a step function with a Map state.
+ * */
 export async function handler(input: { ticker: string; }): Promise<{ ticker: string; itemsLoaded: number; }> {
   await getAndstoreQuoteSummary(input.ticker, marketDataBucketName, marketDataTableName);
   return await getAndstoreHistoricalData(input.ticker, marketDataBucketName, marketDataTableName);

@@ -4,6 +4,9 @@ import { getAndstoreHistoricalData, MarketDataDetail } from '/opt/nodejs/marketD
 const marketDataBucketName = process.env.bucketName;
 const marketDataTableName = process.env.marketDataTableName;
 
-export const handler = async (event: EventBridgeEvent<string, MarketDataDetail>): Promise<void> => {
+/**
+ * This is meant to be used in a step function with a Parallel state.
+ * */
+export async function handler(event: EventBridgeEvent<string, MarketDataDetail>): Promise<void> {
   await Promise.all(event.detail.tickers.map(ticker => getAndstoreHistoricalData(ticker, marketDataBucketName, marketDataTableName)));
 }
