@@ -6,7 +6,7 @@
       "Type": "Map",
       "InputPath": "$.detail",
       "ItemsPath": "$.tickers",
-      "MaxConcurrency": 0,
+      "MaxConcurrency": 5,
       "Iterator": {
         "StartAt": "GetMarketData",
         "States": {
@@ -29,7 +29,34 @@
         "Payload.$": "$",
         "FunctionName": "${MarketDataManagerPostMapStateLambda}"
       },
+      "Next": "Any historical data retrieved?"
+    },
+    "Any historical data retrieved?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.retrievedAnyItem",
+          "StringEquals": "Y",
+          "Next": "Process newly retrieved data"
+        },
+        {
+          "Variable": "$.retrievedAnyItem",
+          "StringEquals": "N",
+          "Next": "No historical data retrieved"
+        }
+      ],
+      "Default": "Fail"
+    },
+    "Process newly retrieved data": {
+      "Type": "Pass",
       "End": true
+    },
+    "No historical data retrieved": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Fail": {
+      "Type": "Fail"
     }
   }
 }
