@@ -1,8 +1,8 @@
 {
     "Comment": "Market Data Manager",
-    "StartAt": "Retrieve quote summay and historical data in parallel",
+    "StartAt": "Retrieve quote summary and historical data",
     "States": {
-      "Parallel": {
+      "Retrieve quote summary and historical data": {
         "Type": "Parallel",
         "End": true,
         "Branches": [

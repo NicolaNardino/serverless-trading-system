@@ -1,16 +1,16 @@
 {
-  "Comment": "Market data manager with map state, triggered by API Gateway",
-  "StartAt": "ParallelMarketData",
+  "Comment": "Market data manager with map state, triggered by an API Gateway endpoint",
+  "StartAt": "Retrieve historical data and quote summary",
   "States": {
-    "Retrieve historical data and quote summary in parallel, by a map state": {
+    "Retrieve historical data and quote summary": {
       "Type": "Map",
       "InputPath": "$.detail",
       "ItemsPath": "$.tickers",
       "MaxConcurrency": 5,
       "Iterator": {
-        "StartAt": "GetMarketData",
+        "StartAt": "Get historical data and quote summary",
         "States": {
-          "GetMarketData": {
+          "Get historical data and quote summary": {
             "Type": "Task",
             "Resource": "${HistoricalDataAndQuoteSummaryManagerLambda}",
             "End": true
@@ -19,7 +19,7 @@
       },
       "ResultPath": "$.detail.tickers",
       "OutputPath": "$.detail",
-      "Next": "MarketDataManagerPostMapState"
+      "Next": "Determine whether any historical data has been retrieved"
     },
     "Determine whether any historical data has been retrieved": {
       "Type": "Task",
