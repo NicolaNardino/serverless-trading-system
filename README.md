@@ -110,6 +110,12 @@ See [here](https://aws.amazon.com/blogs/compute/using-node-js-es-modules-and-top
 ### Lambda Proxy Integration
 The 2 API Gateways, SmartOrderRouter-API & DataExtractor-API, use the Lamba Proxy Integration, i.e., /{proxy+}. 
 
+### Step Functions
+Step Functions are used to deal with retrieving market data from Yahoo Finance. 
+Specifically, one is used in the context of the order workflow to retriave market data (quote summary and historical data) for order tickers. This one, triggered by an EventBridge event, uses a Parallel state branching out two lambdas, each specialized either in quote summary or historical data. See the overall software architecture.
+ 
+The other one, triggered by an API Gateway post end-point, uses a single lambda to retrieve both quote summary and historical data. This gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. 
+
 ![data-access-layer](https://user-images.githubusercontent.com/8766989/152656258-b3a5b64c-20f5-485b-8bf5-2d741e7635fa.jpg)
 
 ### Lambda Layer
