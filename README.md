@@ -32,7 +32,7 @@ Rule example:
 }
 ```
 Part of the matched event target deliver:
-```unix
+```unix![market-data-manager-step-function-api (1)](https://user-images.githubusercontent.com/8766989/198897598-678ca9dc-d806-48fe-b375-def561d742bd.jpg)
 $.detail.orders
 ```
 Where detail is the event envelope. In this way, only the array of orders will be delivered to the target. Compare that with the boilerplate code require in a SNS subscriber.
@@ -118,7 +118,7 @@ Specifically, one is used in the context of the order workflow to retriave marke
  
 The other one, triggered by an API Gateway post end-point, uses a single lambda to retrieve both quote summary and historical data. This gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. 
 
-![market-data-manager-step-function-api](https://user-images.githubusercontent.com/8766989/197853185-977da65d-e211-442b-adf8-e9689ed16936.jpg)
+![market-data-manager-step-function-api (1)](https://user-images.githubusercontent.com/8766989/198897598-678ca9dc-d806-48fe-b375-def561d742bd.jpg)
 
 ### Lambda Layer
 ![lambda-layers](https://user-images.githubusercontent.com/8766989/152656253-62478427-945a-48e4-b36b-ce0f648f50e0.jpg)
