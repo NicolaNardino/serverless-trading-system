@@ -138,3 +138,4 @@ While [Lit Pools](https://en.wikipedia.org/wiki/Lit_pool) are usually known by t
 
 - ~~JavaScript to TypeScript conversion.~~
 - Manage order workflow through state machines/ step functions.
+- Add OpenAPI specs.
