@@ -116,7 +116,7 @@ The 2 API Gateways, SmartOrderRouter-API & DataExtractor-API, use the Lamba Prox
 Step Functions are used to deal with retrieving market data from Yahoo Finance. 
 Specifically, one is used in the context of the order workflow to retriave market data (quote summary and historical data) for order tickers. This one, triggered by an EventBridge event, uses a Parallel state branching out two lambdas, each specialized either in quote summary or historical data. See the overall software architecture.
  
-The other one, triggered by an API Gateway post end-point, uses a single lambda to retrieve both quote summary and historical data. This gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. 
+The other one, triggered by an API Gateway post end-point, uses a single lambda to retrieve both quote summary and historical data. It gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. In order to allow further processing, at the end of each successful market data retrieval, the state machine emits  an EventBridge event.
 
 ![market-data-manager-step-function-api (1)](https://user-images.githubusercontent.com/8766989/198897598-678ca9dc-d806-48fe-b375-def561d742bd.jpg)
 
