@@ -972,6 +972,7 @@ Resources:
       DefinitionSubstitutions:
         HistoricalDataAndQuoteSummaryManagerLambda: !GetAtt HistoricalDataAndQuoteSummaryManagerLambda.Arn
         DetermineIfDataRetrievedPostMapStateLambda: !GetAtt DetermineIfDataRetrievedPostMapStateLambda.Arn
+        EventBusName: !Ref EventBusName
       Tracing:
         Enabled: true
       Role: !GetAtt MarketDataManagerParallelStateMachineExecutionRole.Arn
@@ -1004,10 +1005,14 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "lambda:InvokeFunction"
+                  - lambda:InvokeFunction
                 Resource: 
                   - !GetAtt HistoricalDataAndQuoteSummaryManagerLambda.Arn
                   - !GetAtt DetermineIfDataRetrievedPostMapStateLambda.Arn
+              - Effect: Allow
+                Action:
+                  - events:PutEvents
+                Resource: !GetAtt EventBus.Arn
               - Effect: Allow
                 Action:
                   - logs:*

@@ -49,6 +49,23 @@
     },
     "Process newly retrieved data": {
       "Type": "Pass",
+      "Next": "Notify Market Data Retrieval Completion"
+    },
+    "Notify Market Data Retrieval Completion": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Parameters": {
+        "Entries": [
+          {
+            "Detail": {
+              "Message": "Market Data Update"
+            },
+            "DetailType": "MarketDataUpdate",
+            "EventBusName": "${EventBusName}",
+            "Source": "MarketDataManagerParallelStateMachine"
+          }
+        ]
+      },
       "End": true
     },
     "No historical data retrieved": {
