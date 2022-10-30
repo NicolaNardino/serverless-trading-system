@@ -3,13 +3,15 @@
  * It provides the input to a Choice state.
  * */
 
+import { MarketDataRetreivalResult } from "/opt/nodejs/marketDataManager/marketDataManager";
+
 export async function handler(input: Input): Promise<Output> {
   console.log(input);  
   return {...input, retrievedAnyItem : (input.tickers.find(item => item.itemsLoaded > 0) != undefined ? "Y" : "N")};
 }
 
 interface Input {
-  tickers: {ticker: string; itemsLoaded: number}[];
+  tickers: MarketDataRetreivalResult[];
 }
 
 interface Output extends Input {

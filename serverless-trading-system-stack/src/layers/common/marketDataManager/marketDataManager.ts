@@ -2,7 +2,7 @@ import { delay, s3Client, ddbDocClient } from '../util/utils.js';
 import { yahooFinance, PutObjectCommand, PutCommand, UpdateCommand, GetCommand } from '../util/dependencies.js';
 
 
-export async function getAndstoreHistoricalData(ticker: string, marketDataBucketName: string, marketDataTableName: string) : Promise<{ticker: string, itemsLoaded: number}> {
+export async function getAndstoreHistoricalData(ticker: string, marketDataBucketName: string, marketDataTableName: string) : Promise<MarketDataRetreivalResult> {
     try {
       const histDataStart = '2020-01-01';
       const histDataEnd = new Date();
@@ -16,9 +16,9 @@ export async function getAndstoreHistoricalData(ticker: string, marketDataBucket
       }));
       console.log("Historical data for ", ticker, "stored in S3 bucket ", marketDataBucketName);
       const currentHistDataEnd = await getCurrentHistDataEnd(ticker, marketDataTableName);
-      const filteredResult = (currentHistDataEnd === undefined ? result : (result.filter(item => item.date > currentHistDataEnd)))
+      const filteredResult = (currentHistDataEnd === undefined ? result : (result.filter(item => item.date > currentHistDataEnd)));
+      const histDataNewestBatchStart = (filteredResult.length > 0 ? filteredResult[0].date : undefined);
       console.log('Current hist data end for ticker', ticker, ' is: ', currentHistDataEnd, ', target end:', formatDate(histDataEnd), ', items to upload:', filteredResult.length);
-  
       await Promise.all(filteredResult.map(async (item, index) => {//waiting every x(=10) writes, not to consume the free tier.
         const params = {
           TableName: marketDataTableName,
@@ -56,7 +56,7 @@ export async function getAndstoreHistoricalData(ticker: string, marketDataBucket
       };
       await ddbDocClient.send(new UpdateCommand(updateHistDataStartEnd));
       console.log('Historical market data start/ end updated for ', ticker);
-      return {"ticker": ticker, itemsLoaded:  filteredResult.length};
+      return {"ticker": ticker, itemsLoaded:  filteredResult.length, histDataNewestBatchStart: formatDate(histDataNewestBatchStart)};
     }
     catch (e) {
       console.log('Failed to store historical market data for ticker ', ticker, e);
@@ -77,7 +77,7 @@ export async function getAndstoreHistoricalData(ticker: string, marketDataBucket
     return result.HistDataEnd === undefined ? result.HistDataEnd : new Date(result.HistDataEnd)
   }
   
-  const formatDate = (inputDate: Date) => inputDate.toISOString().split('T')[0];
+  const formatDate = (inputDate: Date) => (inputDate === undefined ? undefined : inputDate.toISOString().split('T')[0]);
 
   export async function getAndstoreQuoteSummary(ticker: string, marketDataBucketName: string, marketDataTableName: string) {
     try {
@@ -132,4 +132,10 @@ export async function getAndstoreHistoricalData(ticker: string, marketDataBucket
 
   export interface MarketDataDetail {
     tickers: string[];
+  }
+
+  export interface MarketDataRetreivalResult {
+    ticker: string; 
+    itemsLoaded: number; 
+    histDataNewestBatchStart?: string
   }
