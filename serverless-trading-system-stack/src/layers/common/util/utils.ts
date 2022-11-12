@@ -61,6 +61,8 @@ function splitBy (number: number, n: number) {
     return splitArray;
 }
 
+const formatDate = (inputDate: Date) => (inputDate === undefined ? undefined : inputDate.toISOString().split('T')[0]);
+
 export {
     getRandomInteger,
     getRandom,
@@ -75,5 +77,6 @@ export {
     ddbDocClient,
     s3Client,
     eventBridgeClient,
-    matchOrder
+    matchOrder,
+    formatDate
 }

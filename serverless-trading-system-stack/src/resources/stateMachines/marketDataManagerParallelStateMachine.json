@@ -48,7 +48,13 @@
       "Default": "Fail"
     },
     "Process newly retrieved data": {
-      "Type": "Pass",
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${ProcessNewlyRetrievedDataLambda}"
+      },
       "Next": "Notify Market Data Retrieval Completion"
     },
     "Notify Market Data Retrieval Completion": {

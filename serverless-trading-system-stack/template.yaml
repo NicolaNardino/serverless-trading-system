@@ -488,6 +488,25 @@ Resources:
       Runtime: nodejs16.x
       Architectures:
         - x86_64
+  ProcessNewlyRetrievedDataLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: ProcessNewlyRetrievedData
+      CodeUri: dist/lambdas/marketData/processNewlyRetrievedData/
+      Handler: processNewlyRetrievedData.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs16.x
+      Policies:
+        - DynamoDBWritePolicy: 
+            TableName: !Ref MarketDataTable
+        - DynamoDBReadPolicy: 
+            TableName: !Ref MarketDataTable
+      Environment:
+        Variables:
+          marketDataTableName: !Ref MarketDataTable
+      Architectures:
+        - x86_64
   HistoricalDataAndQuoteSummaryManagerLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -972,6 +991,7 @@ Resources:
       DefinitionSubstitutions:
         HistoricalDataAndQuoteSummaryManagerLambda: !GetAtt HistoricalDataAndQuoteSummaryManagerLambda.Arn
         DetermineIfDataRetrievedPostMapStateLambda: !GetAtt DetermineIfDataRetrievedPostMapStateLambda.Arn
+        ProcessNewlyRetrievedDataLambda: !GetAtt ProcessNewlyRetrievedDataLambda.Arn
         EventBusName: !Ref EventBusName
       Tracing:
         Enabled: true
@@ -1009,6 +1029,7 @@ Resources:
                 Resource: 
                   - !GetAtt HistoricalDataAndQuoteSummaryManagerLambda.Arn
                   - !GetAtt DetermineIfDataRetrievedPostMapStateLambda.Arn
+                  - !GetAtt ProcessNewlyRetrievedDataLambda.Arn
               - Effect: Allow
                 Action:
                   - events:PutEvents

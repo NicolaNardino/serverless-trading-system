@@ -1,4 +1,4 @@
-import { delay, s3Client, ddbDocClient } from '../util/utils.js';
+import { delay, s3Client, ddbDocClient, formatDate } from '../util/utils.js';
 import { yahooFinance, PutObjectCommand, PutCommand, UpdateCommand, GetCommand } from '../util/dependencies.js';
 
 
@@ -76,8 +76,6 @@ export async function getAndstoreHistoricalData(ticker: string, marketDataBucket
     const result : any = (await ddbDocClient.send(new GetCommand(params))).Item;
     return result.HistDataEnd === undefined ? result.HistDataEnd : new Date(result.HistDataEnd)
   }
-  
-  const formatDate = (inputDate: Date) => (inputDate === undefined ? undefined : inputDate.toISOString().split('T')[0]);
 
   export async function getAndstoreQuoteSummary(ticker: string, marketDataBucketName: string, marketDataTableName: string) {
     try {
