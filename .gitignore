@@ -109,3 +109,4 @@ dist
 *.vscode
 
 .npmignore
+serverless-trading-system-stack/samconfig.toml
