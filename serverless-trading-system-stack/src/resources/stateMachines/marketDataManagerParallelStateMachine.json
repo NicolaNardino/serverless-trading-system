@@ -75,7 +75,16 @@
       "End": true
     },
     "No historical data retrieved": {
-      "Type": "Pass",
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload": {
+          "input.$": "$",
+          "taskToken.$": "$$.Task.Token"
+        },
+        "FunctionName": "${NoHistoricalDataRetrievedLambda}"
+      },
       "End": true
     },
     "Fail": {

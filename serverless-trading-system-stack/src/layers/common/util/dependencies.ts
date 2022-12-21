@@ -4,6 +4,7 @@ import { SSMClient, GetParameterCommand, GetParametersCommand } from "@aws-sdk/c
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"; 
 import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand  } from "@aws-sdk/lib-dynamodb";
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
+import { SendTaskSuccessCommand, SendTaskFailureCommand } from "@aws-sdk/client-sfn";
 import { randomUUID } from 'crypto';
 import fetch from 'node-fetch';
 import yahooFinance from "yahoo-finance2";
@@ -14,6 +15,7 @@ export {
     SSMClient, GetParameterCommand, GetParametersCommand,
     DynamoDBClient, DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand,
     EventBridgeClient, PutEventsCommand,
+    SendTaskSuccessCommand, SendTaskFailureCommand,
     randomUUID,
     fetch,
     yahooFinance

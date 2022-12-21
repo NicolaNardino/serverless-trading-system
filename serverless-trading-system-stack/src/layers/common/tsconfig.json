@@ -10,7 +10,10 @@
     "baseUrl": ".",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "declaration": true
+    "declaration": true,
+    "paths": {
+      "/opt/nodejs/*": ["src/layers/common/*"]
+    }
   },
   "include": ["./", "./package*.json", "./.npmignore"],
   "exclude": ["node_modules", "**/*.spec.ts"]

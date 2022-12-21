@@ -519,8 +519,6 @@ Resources:
       Policies:
         - S3WritePolicy:
             BucketName: !Ref MarketDataBucket
-        - SSMParameterReadPolicy:
-            ParameterName: "*"
         - DynamoDBWritePolicy: 
             TableName: !Ref MarketDataTable
         - DynamoDBReadPolicy: 
@@ -532,7 +530,23 @@ Resources:
           marketDataTableName: !Ref MarketDataTable
       Architectures:
         - x86_64
-        
+  NoHistoricalDataRetrievedLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: NoHistoricalDataRetrieved
+      CodeUri: dist/lambdas/marketData/noHistoricalDataRetrieved/
+      Handler: noHistoricalDataRetrieved.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs16.x
+      Policies: 
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBusName
+      Environment:
+        Variables:
+          eventBusName: !Ref EventBusName
+      Architectures:
+        - x86_64
   SamTradingSystemLayer:
         Type: AWS::Serverless::LayerVersion
         Properties:
@@ -992,6 +1006,7 @@ Resources:
         HistoricalDataAndQuoteSummaryManagerLambda: !GetAtt HistoricalDataAndQuoteSummaryManagerLambda.Arn
         DetermineIfDataRetrievedPostMapStateLambda: !GetAtt DetermineIfDataRetrievedPostMapStateLambda.Arn
         ProcessNewlyRetrievedDataLambda: !GetAtt ProcessNewlyRetrievedDataLambda.Arn
+        NoHistoricalDataRetrievedLambda: !GetAtt NoHistoricalDataRetrievedLambda.Arn
         EventBusName: !Ref EventBusName
       Tracing:
         Enabled: true
@@ -1030,6 +1045,7 @@ Resources:
                   - !GetAtt HistoricalDataAndQuoteSummaryManagerLambda.Arn
                   - !GetAtt DetermineIfDataRetrievedPostMapStateLambda.Arn
                   - !GetAtt ProcessNewlyRetrievedDataLambda.Arn
+                  - !GetAtt NoHistoricalDataRetrievedLambda.Arn
               - Effect: Allow
                 Action:
                   - events:PutEvents
