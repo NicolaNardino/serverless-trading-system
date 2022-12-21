@@ -110,3 +110,4 @@ dist
 
 .npmignore
 serverless-trading-system-stack/samconfig.toml
+.aws-sam/
