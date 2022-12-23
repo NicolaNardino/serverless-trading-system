@@ -1,4 +1,4 @@
-import { PublishCommand, PublishCommandInput, MessageAttributeValue, GetParameterCommand, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient, fetch } from "./dependencies.js";
+import { SFNClient, PublishCommand, PublishCommandInput, MessageAttributeValue, GetParameterCommand, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient, fetch } from "./dependencies.js";
 
 const getRandomInteger = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -23,6 +23,7 @@ const snsClient = new SNSClient(region);
 const ssmClient = new SSMClient(region);
 const s3Client = new S3Client(region);
 const eventBridgeClient = new EventBridgeClient(region);
+const sfnClient = new SFNClient(region);
 
 async function publishToSns(topicArn: string, message: object, messageAttributes?: {[key: string]: MessageAttributeValue}) {
     console.log('About to publish message ', JSON.stringify(message), ' to the topic ', topicArn);
@@ -77,6 +78,7 @@ export {
     ddbDocClient,
     s3Client,
     eventBridgeClient,
+    sfnClient,
     matchOrder,
     formatDate
 }

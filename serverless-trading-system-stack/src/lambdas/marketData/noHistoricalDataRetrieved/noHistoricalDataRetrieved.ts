@@ -4,8 +4,8 @@ import { PutEventsCommand } from '/opt/nodejs/util/dependencies.js';
 
 const eventBusName = process.env.eventBusName;
 
-export async function handler(input: { tickers: MarketDataRetreivalResult[] }, taskToken: string): Promise<void> {
-  console.log(input);
+export async function handler(inputWithTaskToken: InputWithTaskToken): Promise<void> {
+  console.log(JSON.stringify(inputWithTaskToken));
   const params = {
     Entries: [
       {
@@ -14,9 +14,14 @@ export async function handler(input: { tickers: MarketDataRetreivalResult[] }, t
         DetailType: "NoHistoricalDataRetrieved",
         Time: new Date(),
         Detail: JSON.stringify({
-          taskToken: taskToken
+          taskToken: inputWithTaskToken.taskToken
         })
       }
     ]};
-  const result = await eventBridgeClient.send(new PutEventsCommand(params));
+  await eventBridgeClient.send(new PutEventsCommand(params));
+}
+
+interface InputWithTaskToken {
+  input: { tickers: MarketDataRetreivalResult[] },
+  taskToken: string
 }

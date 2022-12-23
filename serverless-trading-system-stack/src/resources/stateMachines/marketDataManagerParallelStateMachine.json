@@ -77,7 +77,6 @@
     "No historical data retrieved": {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
-      "OutputPath": "$.Payload",
       "Parameters": {
         "Payload": {
           "input.$": "$",

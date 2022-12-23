@@ -547,6 +547,26 @@ Resources:
           eventBusName: !Ref EventBusName
       Architectures:
         - x86_64
+  NoHistoricalDataRetrievedExternalManagerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: NoHistoricalDataRetrievedExternalManager
+      CodeUri: dist/lambdas/marketData/noHistoricalDataRetrievedExternalManager/
+      Handler: noHistoricalDataRetrievedExternalManager.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs16.x
+      Policies: 
+        - Statement:
+          - Effect: Allow
+            Action:
+              - states:SendTaskSuccess
+            Resource: '*'
+      Environment:
+        Variables:
+          eventBusName: !Ref EventBusName
+      Architectures:
+        - x86_64
   SamTradingSystemLayer:
         Type: AWS::Serverless::LayerVersion
         Properties:
@@ -783,7 +803,24 @@ Resources:
               - "Arn"
           Id: "PostTradeProcessorLegacyTarget"
           InputPath: "$.detail.trades"
-
+  NoHistoricalDataRetrievedExternalManagerRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: NoHistoricalDataRetrievedExternalManager
+      EventBusName: !Ref EventBus
+      EventPattern: 
+        source: 
+          - "MarketDataManagerStepFunction"
+        detail-type:
+          - "NoHistoricalDataRetrieved"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "NoHistoricalDataRetrievedExternalManagerLambda"
+              - "Arn"
+          Id: "NoHistoricalDataRetrievedExternalManagerTarget"
   # Provide permission for EventBridge to invoke the Lambda function
   LitPoolMatchingEngineLambdaEventsInvokePermission: 
     Type: AWS::Lambda::Permission
@@ -872,6 +909,17 @@ Resources:
       SourceArn: 
         Fn::GetAtt: 
           - "PostTradeProcessorLegacyRule"
+          - "Arn"
+  NoHistoricalDataRetrievedExternalManagerLambdaEventsInvokePermission: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "NoHistoricalDataRetrievedExternalManagerLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "NoHistoricalDataRetrievedExternalManagerRule"
           - "Arn"
   # Provide permission for SNS to invoke the Lambda function
   LitPoolMatchingEngineLegacyLambdaInvokePermission:
