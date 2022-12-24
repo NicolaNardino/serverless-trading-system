@@ -45,7 +45,8 @@ Specifically, one is used in the context of the order workflow to retriave marke
  
 The other one, triggered by an API Gateway post end-point, uses a single lambda to retrieve both quote summary and historical data. It gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. In order to allow further processing, at the end of each successful market data retrieval, the state machine emits  an EventBridge event. 
 In case of failure while retrieving market data, it enters in a wait state (waitForTaskToken) and delegates the error management to a Lambda function outside the state machine. When that finishes it calls SFNClient.SendTaskSuccessCommand(...taskToken) to let the state machine resume and complete its execution. 
-Below is a state machine extract that defines a lambda state as "waitForTaskToken", and then allows for the token to be obtained by the Lamnba through in its payload. 
+
+Below is a state machine extract that defines a lambda state as "waitForTaskToken", and then allows for the token to be obtained by the Lamnba itself in its payload. 
 
 ```json
 "No historical data retrieved": {
