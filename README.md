@@ -31,6 +31,7 @@ Rule example:
   }
 }
 ```
+
 Part of the matched event target deliver:
 ```unix![market-data-manager-step-function-api (1)](https://user-images.githubusercontent.com/8766989/198897598-678ca9dc-d806-48fe-b375-def561d742bd.jpg)
 $.detail.orders
@@ -59,7 +60,8 @@ Below is a state machine extract that defines a lambda state as "waitForTaskToke
       },
       "End": true
     }
-```json
+```
+
 ![market-data-manager-step-function-api drawio (1)](https://user-images.githubusercontent.com/8766989/209447628-524fea9b-a945-4813-b299-872f2f73d3ea.png)
 
 
