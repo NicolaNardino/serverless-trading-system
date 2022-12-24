@@ -43,8 +43,23 @@ Step Functions are used to deal with retrieving market data from Yahoo Finance.
 Specifically, one is used in the context of the order workflow to retriave market data (quote summary and historical data) for order tickers. This one, triggered by an EventBridge event, uses a Parallel state branching out two lambdas, each specialized either in quote summary or historical data. See the overall software architecture.
  
 The other one, triggered by an API Gateway post end-point, uses a single lambda to retrieve both quote summary and historical data. It gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. In order to allow further processing, at the end of each successful market data retrieval, the state machine emits  an EventBridge event. 
-In case of failure while retrieving market data, it enters in a wait state (waitForTaskToken) and delegates the error management to a Lambda function outside the state machine. When that finishes it calls SFNClient.SendTaskSuccessCommand(...taskToken) to let the state machine resume and complete its execution.
+In case of failure while retrieving market data, it enters in a wait state (waitForTaskToken) and delegates the error management to a Lambda function outside the state machine. When that finishes it calls SFNClient.SendTaskSuccessCommand(...taskToken) to let the state machine resume and complete its execution. 
+Below is a state machine extract that defines a lambda state as "waitForTaskToken", and then allows for the token to be obtained by the Lamnba through in its payload. 
 
+```json
+"No historical data retrieved": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "Payload": {
+          "input.$": "$",
+          "taskToken.$": "$$.Task.Token"
+        },
+        "FunctionName": "${NoHistoricalDataRetrievedLambda}"
+      },
+      "End": true
+    }
+```json
 ![market-data-manager-step-function-api drawio (1)](https://user-images.githubusercontent.com/8766989/209447628-524fea9b-a945-4813-b299-872f2f73d3ea.png)
 
 
