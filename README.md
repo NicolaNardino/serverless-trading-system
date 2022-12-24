@@ -116,9 +116,10 @@ The 2 API Gateways, SmartOrderRouter-API & DataExtractor-API, use the Lamba Prox
 Step Functions are used to deal with retrieving market data from Yahoo Finance. 
 Specifically, one is used in the context of the order workflow to retriave market data (quote summary and historical data) for order tickers. This one, triggered by an EventBridge event, uses a Parallel state branching out two lambdas, each specialized either in quote summary or historical data. See the overall software architecture.
  
-The other one, triggered by an API Gateway post end-point, uses a single lambda to retrieve both quote summary and historical data. It gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. In order to allow further processing, at the end of each successful market data retrieval, the state machine emits  an EventBridge event.
+The other one, triggered by an API Gateway post end-point, uses a single lambda to retrieve both quote summary and historical data. It gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. In order to allow further processing, at the end of each successful market data retrieval, the state machine emits  an EventBridge event. 
+In case of failure while retrieving market data, it enters in a wait state (waitForTaskToken) and delegates the error management to a Lambda function outside the state machine. When that finishes it calls SFNClient.SendTaskSuccessCommand(...taskToken) to let the state machine resume and complete its execution.
 
-![market-data-manager-step-function-api (1)](https://user-images.githubusercontent.com/8766989/198897598-678ca9dc-d806-48fe-b375-def561d742bd.jpg)
+![market-data-manager-step-function-api drawio (1)](https://user-images.githubusercontent.com/8766989/209447628-524fea9b-a945-4813-b299-872f2f73d3ea.png)
 
 ### Lambda Layer
 ![lambda-layers](https://user-images.githubusercontent.com/8766989/152656253-62478427-945a-48e4-b36b-ce0f648f50e0.jpg)
