@@ -41,10 +41,10 @@ Where detail is the event envelope. In this way, only the array of orders will b
 ### Step Functions
 
 Step Functions are used to deal with retrieving market data from Yahoo Finance. 
-Specifically, one is used in the context of the order workflow to retriave market data (quote summary and historical data) for order tickers. This one, triggered by an EventBridge event, uses a Parallel state branching out two lambdas, each specialized either in quote summary or historical data. See the overall software architecture.
+Specifically, one is exclusively used in the context of the order workflow to retriave market data (quote summary and historical data) for order tickers. This one, triggered by an EventBridge event, uses a Parallel state branching out to two lambdas, each specialized either in quote summary or historical data. See the overall software architecture.
  
-The other one, triggered by an API Gateway post end-point, uses a single lambda to retrieve both quote summary and historical data. It gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. In order to allow further processing, at the end of each successful market data retrieval, the state machine emits  an EventBridge event. 
-In case of failure while retrieving market data, it enters in a wait state (waitForTaskToken) and delegates the error management to a Lambda function outside the state machine. When that finishes it calls SFNClient.SendTaskSuccessCommand(...taskToken) to let the state machine resume and complete its execution. 
+The other one can be triggered by an API Gateway post end-point or directly through the Step Function APIs. The latter allows it to be called in the order workflow too. It uses a single lambda to retrieve both quote summary and historical data. It gets executed in parallel via a Map state. The overall execution is asynchronous, given that the Step Function uses a standard workflow, which contrarily to the Express one, doesn't allow synch executions. In order to allow further processing, at the end of each successful market data retrieval, the state machine emits  an EventBridge event. 
+In case of failure retrieving market data, it enters in a wait state (waitForTaskToken) and delegates the error management to a Lambda function outside the state machine. When that finishes it calls SFNClient.SendTaskSuccessCommand(...taskToken) to let the state machine resume and complete its execution. 
 
 Below is a state machine extract that defines a lambda state as "waitForTaskToken", and then allows for the token to be obtained by the Lamnba itself in its payload. 
 
