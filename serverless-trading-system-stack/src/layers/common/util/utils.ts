@@ -1,4 +1,11 @@
-import { SFNClient, PublishCommand, PublishCommandInput, MessageAttributeValue, GetParameterCommand, GetParametersCommand, DynamoDBClient, DynamoDBDocumentClient, SNSClient, SSMClient, S3Client, EventBridgeClient, fetch } from "./dependencies.js";
+import { SFNClient } from "@aws-sdk/client-sfn";
+import { SNSClient } from "@aws-sdk/client-sns";
+import { S3Client } from "@aws-sdk/client-s3";
+import { SSMClient } from "@aws-sdk/client-ssm";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb"; 
+import { DynamoDBDocumentClient  } from "@aws-sdk/lib-dynamodb";
+import { EventBridgeClient} from "@aws-sdk/client-eventbridge";
+import { PublishCommand, PublishCommandInput, MessageAttributeValue, GetParameterCommand, GetParametersCommand, fetch } from "./dependencies.js";
 
 const getRandomInteger = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 
