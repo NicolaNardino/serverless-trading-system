@@ -221,13 +221,17 @@ Resources:
         - SNSPublishMessagePolicy:
             TopicName: !Ref TopicName
         - EventBridgePutEventsPolicy:
-            EventBusName: !Ref EventBusName
+            EventBusName: !Ref EventBusName 
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: MarketDataManagerParallelStateMachine #just the name.
       Environment:
         Variables:
           tradesStoreTableName: !Ref DDBTable
           marketDataTableName: !Ref MarketDataTable
           ordersDispatcherTopicArn: !Ref OrdersDispatcherTopic
           eventBusName: !Ref EventBusName
+          parallelMarketDataManagerStateMachine: !Ref MarketDataManagerParallelStateMachine
+          marketDataStepFunctionInvokeMode: StepFunctionAPIs #or EventBridge
       Architectures:
         - x86_64
       Events:
@@ -1142,3 +1146,5 @@ Outputs:
   EventBusInfo:
     Value: !Ref EventBus
     Description: Event Bus
+  MarketDataManagerParallelStateMachineARN:
+    Value: !GetAtt MarketDataManagerParallelStateMachine.Arn   

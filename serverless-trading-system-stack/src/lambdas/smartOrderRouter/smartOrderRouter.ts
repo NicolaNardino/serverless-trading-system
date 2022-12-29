@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 
-import { splitBy, publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient } from '/opt/nodejs/util/utils.js';
-import { randomUUID, GetCommand, PutEventsCommand } from '/opt/nodejs/util/dependencies.js';
+import { splitBy, publishToSns, getParameters, getRandom, ddbDocClient, eventBridgeClient, sfnClient } from '/opt/nodejs/util/utils.js';
+import { randomUUID, GetCommand, PutEventsCommand, StartExecutionCommand } from '/opt/nodejs/util/dependencies.js';
 import { EntryOrder, Order, Type } from '/opt/nodejs/util/types.js';
 
 const paramValues = await getParameters(['/trading-system/dev/dark-pool-tickers-list', '/trading-system/dev/bus-type']);
@@ -10,13 +10,15 @@ const busType = paramValues.get('/trading-system/dev/bus-type'); //SNS or EventB
 const tradesStoreTableName = process.env.tradesStoreTableName;
 const ordersDispatcherTopicArn = process.env.ordersDispatcherTopicArn;
 const eventBusName = process.env.eventBusName;
+const marketDataStepFunctionInvokeMode = process.env.marketDataStepFunctionInvokeMode;
+const parallelMarketDataManagerStateMachine = process.env.parallelMarketDataManagerStateMachine;
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         let orders: EntryOrder[] = [];
         if (event.body)
             orders = JSON.parse(event.body);
-        await requestMarketData(orders);
+        await requestMarketData([...new Set(orders.map(o => o.ticker))]);
         const checkedOrders = await creditCheck(orders);
         orders = checkedOrders.validOrders;
         const invalidOrders = checkedOrders.invalidOrders;
@@ -40,21 +42,38 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 }
 
-const requestMarketData = async (orders: EntryOrder[]) => {
-    const distinctTickers = [...new Set(orders.map(o => o.ticker))];
-    await eventBridgeClient.send(new PutEventsCommand({
-        Entries: [
-            {
-                Source: "SmartOrderRouter",
-                EventBusName: eventBusName,
-                DetailType: "MarketData",
-                Time: new Date(),
-                Detail: JSON.stringify({
-                    tickers: distinctTickers
-                })
-            }]
-    }));
-    console.log('Sent market data request for ', distinctTickers)
+/**
+ * This fire-and-forget function will ask market data, for the passed-in list of tickers, by triggering 2 (different) Step Functions in 2 different ways:
+ *    1. De-coupling by EventBridge: an event gets sent to an Event Bus, with a Step Function subscriber, i.e., the Step Function gets triggered by an Event Bus rule.
+ *    2. Direct call: by using the Step Function APIs.
+ * */ 
+const requestMarketData = async (tickers: string[]) => {
+    switch(marketDataStepFunctionInvokeMode) {
+        case "EventBridge": {
+            await eventBridgeClient.send(new PutEventsCommand({
+                Entries: [
+                    {
+                        Source: "SmartOrderRouter",
+                        EventBusName: eventBusName,
+                        DetailType: "MarketData",
+                        Time: new Date(),
+                        Detail: JSON.stringify({
+                            tickers: tickers
+                        })
+                    }]
+            }));
+            break;
+        }
+        case "StepFunctionAPIs": {
+            //adapt plain tickers list to the state machine expected input. In fact, below invoked Step Funciton was initally designed to be triggered through an API Gateway end-point.
+            const stateMachineInput = { detail: { tickers: tickers.map(t => {return {ticker : t}}) } };
+            await sfnClient.send(new StartExecutionCommand({stateMachineArn: parallelMarketDataManagerStateMachine, input: JSON.stringify(stateMachineInput)}));
+            break;
+        }
+        default: 
+            throw new Error('Unexpected market data Step Function invoke mode: ' + marketDataStepFunctionInvokeMode);
+    }
+    console.log('Sent market data request for ', tickers, ', marketDataStepFunctionInvokeMode: ', marketDataStepFunctionInvokeMode);
 }
 
 const creditCheck = async (orders: EntryOrder[]) => {
