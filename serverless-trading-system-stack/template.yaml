@@ -71,6 +71,11 @@ Resources:
     Properties:
       StageName: dev
       Name: SmartOrderRouterAPI
+  MarketDataAPIDeployment:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Name: MarketDataAPIDeployment
   MarketDataManagerAPIDeployment:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -189,6 +194,30 @@ Resources:
             Path: /{proxy+}
             Method: ANY
             RestApiId: !Ref DataExtractorAPIDeployment
+  GetQuoteSummaryLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: GetQuoteSummary
+      CodeUri: dist/lambdas/marketData/marketDataAPI/getQuoteSummary/
+      Handler: getQuoteSummary.handler
+      Layers:
+        - !Ref SamTradingSystemLayer
+      Runtime: nodejs16.x
+      Policies: 
+        - DynamoDBReadPolicy: 
+            TableName: !Ref MarketDataTable
+      Environment:
+        Variables:
+          marketDataTableName: !Ref MarketDataTable
+      Architectures:
+        - x86_64
+      Events:
+        MarketDataAPI:
+          Type: Api
+          Properties:
+            Path: /quote-summary/{ticker}
+            Method: GET
+            RestApiId: !Ref MarketDataAPIDeployment
   SmartOrderRouterLambda:
     Type: AWS::Serverless::Function
     Properties:
