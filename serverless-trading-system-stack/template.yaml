@@ -212,7 +212,7 @@ Resources:
       Architectures:
         - x86_64
       Events:
-        MarketDataAPI:
+        GetQuoteSummary:
           Type: Api
           Properties:
             Path: /quote-summary/{ticker}
