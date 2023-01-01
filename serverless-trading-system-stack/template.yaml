@@ -194,17 +194,17 @@ Resources:
             Path: /{proxy+}
             Method: ANY
             RestApiId: !Ref DataExtractorAPIDeployment
-  GetQuoteSummaryLambda:
+  GetAndDeleteQuoteSummaryLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: GetQuoteSummary
-      CodeUri: dist/lambdas/marketData/marketDataAPI/getQuoteSummary/
-      Handler: getQuoteSummary.handler
+      FunctionName: GetAndDeleteQuoteSummary
+      CodeUri: dist/lambdas/marketData/marketDataAPI/getAndDeleteQuoteSummary/
+      Handler: getAndDeleteQuoteSummary.handler
       Layers:
         - !Ref SamTradingSystemLayer
       Runtime: nodejs16.x
       Policies: 
-        - DynamoDBReadPolicy: 
+        - DynamoDBCrudPolicy: 
             TableName: !Ref MarketDataTable
       Environment:
         Variables:
@@ -217,6 +217,12 @@ Resources:
           Properties:
             Path: /quote-summary/{ticker}
             Method: GET
+            RestApiId: !Ref MarketDataAPIDeployment
+        DeleteQuoteSummary:
+          Type: Api
+          Properties:
+            Path: /quote-summary/{ticker}
+            Method: DELETE
             RestApiId: !Ref MarketDataAPIDeployment
   SmartOrderRouterLambda:
     Type: AWS::Serverless::Function
@@ -1001,7 +1007,7 @@ Resources:
   LogGroupMarketDataManagerStateMachine:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: "/aws/states/MarketDataManagerStateMachineLogGroup"
+      LogGroupName: "/aws/states/MarketDataManagerStateMachine"
 
   MarketDataManagerStateMachine:
     Type: AWS::Serverless::StateMachine
@@ -1147,7 +1153,7 @@ Resources:
   LogGroupMarketDataManagerParallelStateMachine:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: "/aws/states/MarketDataManagerParallelStateMachineLogGroup"
+      LogGroupName: "/aws/states/MarketDataManagerParallelStateMachine"
 
 Outputs:
   OrdersDispatcherTopicARN:
